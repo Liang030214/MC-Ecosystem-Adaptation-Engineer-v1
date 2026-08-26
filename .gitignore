@@ -41,6 +41,9 @@ data/version_check_state.json
 data/payment/*.png
 data/payment/*.jpg
 
+# 🔒 管理员服务器代码（绝对闭源，仅本地部署，禁止上传）
+server/
+
 # 🔒 敏感配置文件（绝对不能上传到GitHub！）
 # 管理员配置（包含管理员密钥、备份路径等）
 server/data/admin_config.json
