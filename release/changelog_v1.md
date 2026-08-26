@@ -116,6 +116,176 @@ The mod version recommendation database `mod_version_recommendations.json` has b
 ---
 ---
 
+## V1.0.4 (2026-08-25)
+
+### 🚀 重大版本：商业化运营体系 + 阿拉伯语支持 + F7/F11功能优化
+
+---
+
+### 中文说明
+
+#### 功能优化（2项）
+
+| 功能 | V1.0.3状态 | V1.0.4优化内容 |
+|------|-----------|----------------|
+| **F7 多语言翻译** | 11种语言互译 | ① 新增通用阿拉伯语(ar_sa)，升级为12种语言互译 ② 新增阿拉伯语MC术语词典（Tool→أداة、Armor→درع、Enchantment→تعويذة等） ③ translator.py支持多语言词典查找，翻译引擎升级 |
+| **F11 付费引导页面** | 11种语言 | ① 新增阿拉伯语翻译+RTL从右向左书写方向 ② 语言切换改为下拉菜单（12种语言） ③ 新增两条强制付款提示（必须点击"✅我已付款"按钮+24h内禁止重复支付） ④ 货币自动转换（中文¥/其他语言$） ⑤ payment_i18n.py独立模块化 |
+
+#### 新增系统模块（3项）
+
+| 模块 | 说明 |
+|------|------|
+| **F12 在线支付系统** | 支付宝（小微商户API）、微信支付（小微商户API）、PayPal（个人卖家账户）三渠道支付 |
+| **F13 管理员控制台** | Web管理后台，用户管理、订单追踪、权限控制、邮件配置、通知设置 |
+| **F14 自动化运营报表** | 沉睡用户名单、套餐到期提醒（每周）、月度经营报表 |
+
+#### 新增功能详情
+
+1. **三种支付渠道** — 支付宝/微信/PayPal各3张独立收款二维码，三档套餐（月卡/季卡/年卡）
+2. **管理员控制台** — 随机密钥生成、1小时Token时效、内存存储、用户/订单/权限管理
+3. **定时运营报表** — 沉睡用户名单（月+周）、套餐到期提醒（每周可配置检查日）、月度经营报表
+4. **通知聚合模式** — 用户完成付款后发送单封汇总邮件（含完整流程日志）
+5. **阿拉伯语（ar_sa）支持** — 通用标准阿拉伯语（MSA），覆盖沙特/阿联酋/埃及/中亚斯坦国等所有阿拉伯语使用者
+6. **RTL从右向左书写** — 支付页面切换阿拉伯语时自动设置文本方向为RTL
+7. **模组翻译阿拉伯语词典** — MC术语阿拉伯语翻译（Tool→أداة、Armor→درع等）
+
+#### Bug 修复
+
+- 管理控制台版本号显示异常
+- 前端硬编码管理员密钥问题
+- 服务器启动模块导入路径错误
+- remind_log.json 格式兼容问题
+- 阿拉伯语翻译双引号嵌套导致JS语法错误
+
+---
+
+### English Description
+
+#### Feature Optimizations (2)
+
+| Feature | V1.0.3 | V1.0.4 |
+|---------|--------|--------|
+| **F7 Multi-Language Translation** | 11 languages | ① Added Arabic (ar_sa), 12 languages total ② New Arabic MC terms dictionary (Tool→أداة, Armor→درع, etc.) ③ Multi-language dictionary lookup engine |
+| **F11 Payment Guide Page** | 11 languages | ① Arabic translation + RTL support ② Language switcher as dropdown (12 languages) ③ Mandatory payment warnings ④ Currency auto-switch (CNY/USD) ⑤ payment_i18n.py modularized |
+
+#### New System Modules (3)
+
+| Module | Description |
+|--------|-------------|
+| **F12 Online Payment System** | Alipay / WeChat Pay / PayPal, 3 subscription plans |
+| **F13 Admin Dashboard** | Web admin console: user/order/permission management |
+| **F14 Automated Business Reports** | Inactive users, expiry reminders, monthly summary |
+
+#### Bug Fixes
+
+- Admin dashboard version display error
+- Frontend hardcoded admin key issue
+- Server startup module import path error
+- remind_log.json format compatibility
+- Arabic translation double-quote nesting causing JS syntax error
+
+---
+
+**MC 全生态智能适配工程师 V1.0.4** | 完整商业化运营体系 + 12种语言支持
+
+---
+---
+
+## V1.0.3 (2026-08-12)
+
+### 📊 数据扩充 + 付费机制完善
+
+---
+
+### 中文说明
+
+#### 付费机制完善
+
+- ✅ 实现三级渐进式付费引导系统
+  - 第一级：友好提醒（免费期结束/达到限额时自动推送）
+  - 第二级：订阅方案展示（月订/季订/年订，用户主动查看）
+  - 第三级：支持与打赏展示（微信/爱发电/QQ群/官网二维码）
+- ✅ 非强制付费：每日仍有免费额度（20次自动 + 8次半自动）
+- ✅ 尊重用户选择：只有确认查看才展示订阅详情
+- ✅ 多语言支持：11 种语言的付费相关翻译已同步
+
+#### 数据扩充
+
+- 模组版本推荐数据库扩充（新增 50+ 热门模组）
+- 崩溃模式库更新（补充更多错误模式）
+- Java 版本映射补全
+
+---
+
+### English Description
+
+#### Payment Mechanism Enhancement
+
+- Three-level progressive payment guidance system
+- Non-mandatory payment: daily free quota still available
+- User choice respected: subscription details only shown on request
+- 11-language payment translation synchronized
+
+#### Data Expansion
+
+- Mod version recommendation database expanded (50+ new mods)
+- Crash pattern library updated
+- Java version mapping completed
+
+---
+
+**MC 全生态智能适配工程师 V1.0.3** | 渐进式付费引导 + 数据扩充
+
+---
+---
+
+## V1.0.2 (2026-08-10)
+
+### 🔧 性能优化 + 安全合规修复
+
+---
+
+### 中文说明
+
+#### 主要修复
+
+- ✅ 移除付费页面中的二维码、定价表等敏感内容
+- ✅ 将付费页面改为"敬请期待"占位页面
+- ✅ 更新 SKILL.json 功能声明，F11 设为禁用状态
+- ✅ 同步更新 11 种语言的翻译条目
+
+#### 次要优化
+
+- ✅ API 请求缓存系统重构：TTL 过期机制 + 磁盘持久化 + 命中统计
+- ✅ 新增离线数据库模块（offline_db.py）：50+ 热门模组索引 + 模糊匹配
+- ✅ 报告生成器性能优化：模板预编译 + 静态资源缓存 + 批量生成
+- ✅ 11 种语言翻译校对与补全，所有文件 368 键完全同步
+
+---
+
+### English Description
+
+#### Main Fixes
+
+- Removed sensitive payment content (QR codes, pricing)
+- Changed payment page to placeholder
+- Updated SKILL.json declarations
+- Synchronized 11-language translations
+
+#### Secondary Optimizations
+
+- API cache system rebuild: TTL + disk persistence + hit stats
+- Offline database module (offline_db.py): 50+ mod index + fuzzy matching
+- Report generator optimization: template precompilation + static caching
+- 11-language translation audit, 368 keys fully synchronized
+
+---
+
+**MC 全生态智能适配工程师 V1.0.2** | 性能优化 + 安全合规
+
+---
+---
+
 ## V1.0.0 (2026-08-06)
 
 ### 🚀 基础版本首发 / Initial Base Release

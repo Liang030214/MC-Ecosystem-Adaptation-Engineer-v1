@@ -46,6 +46,7 @@ SUPPORTED_LANGUAGES = {
     "el_gr": "Ελληνικά",
     "th_th": "ภาษาไทย",
     "hi_in": "हिन्दी",
+    "ar_sa": "العربية",
 }
 
 # 默认语言（fallback）— 英文为主语言
@@ -147,10 +148,26 @@ _COUNTRY_TO_LANG = {
     "HR": "en_us",  # 克罗地亚
     "RS": "en_us",  # 塞尔维亚
     "TR": "en_us",  # 土耳其
-    "SA": "en_us",  # 沙特阿拉伯
-    "AE": "en_us",  # 阿联酋
+    # 阿拉伯语区（通用阿拉伯语）
+    "SA": "ar_sa",  # 沙特阿拉伯
+    "AE": "ar_sa",  # 阿联酋
+    "EG": "ar_sa",  # 埃及
+    "QA": "ar_sa",  # 卡塔尔
+    "KW": "ar_sa",  # 科威特
+    "BH": "ar_sa",  # 巴林
+    "OM": "ar_sa",  # 阿曼
+    "YE": "ar_sa",  # 也门
+    "SY": "ar_sa",  # 叙利亚
+    "JO": "ar_sa",  # 约旦
+    "LB": "ar_sa",  # 黎巴嫩
+    "IQ": "ar_sa",  # 伊拉克
+    "SD": "ar_sa",  # 苏丹
+    "MA": "ar_sa",  # 摩洛哥
+    "TN": "ar_sa",  # 突尼斯
+    "DZ": "ar_sa",  # 阿尔及利亚
+    "LY": "ar_sa",  # 利比亚
+    "MR": "ar_sa",  # 毛里塔尼亚
     "IL": "en_us",  # 以色列
-    "EG": "en_us",  # 埃及
     "NG": "en_us",  # 尼日利亚
     "KE": "en_us",  # 肯尼亚
     "PK": "en_us",  # 巴基斯坦

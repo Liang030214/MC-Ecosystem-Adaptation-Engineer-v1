@@ -50,7 +50,8 @@ CATEGORY_PATTERNS = {
     "config": re.compile(r"^(config|gui|screen|button|option)\.", re.IGNORECASE),
 }
 
-# === MC常见术语翻译词典 ===
+# === MC常见术语翻译词典（英语 -> 目标语言） ===
+# 主词典：英语 -> 简体中文（默认）
 MC_TERMS_DICT = {
     # 通用词汇
     "item": "物品",
@@ -148,6 +149,113 @@ MC_TERMS_DICT = {
     "peaceful": "和平",
     "easy": "简单",
     "hard": "困难",
+}
+
+# 阿拉伯语术语词典（英语 -> 通用阿拉伯语）
+MC_TERMS_DICT_AR_SA = {
+    # General terms
+    "item": "عنصر",
+    "block": "كتلة",
+    "tile": "كتلة",
+    "entity": "كيان",
+    "mob": "كائن",
+    "player": "لاعب",
+    "damage": "ضرر",
+    "health": "صحة",
+    "speed": "سرعة",
+    "duration": "مدة",
+    "infinite": "غير محدود",
+    "normal": "عادي",
+    "small": "صغير",
+    "large": "كبير",
+    # Minerals
+    "coal": "فحم",
+    "iron": "حديد",
+    "gold": "ذهب",
+    "diamond": "ماس",
+    "emerald": "زمرد",
+    "redstone": "ريدستون",
+    "lapis": "لازورد",
+    "obsidian": "أوبسيديان",
+    # Tools
+    "pickaxe": "معول",
+    "sword": "سيف",
+    "axe": "فأس",
+    "shovel": "مجرفة",
+    "hoe": "مذرع",
+    "hammer": "مطرقة",
+    "bow": "قوس",
+    "arrow": "سهم",
+    "shield": "درع",
+    # Food
+    "apple": "تفاحة",
+    "bread": "خبز",
+    "cooked": "مطبوخ",
+    "raw": "نيء",
+    # Colors
+    "white": "أبيض",
+    "red": "أحمر",
+    "green": "أخضر",
+    "blue": "أزرق",
+    "black": "أسود",
+    "yellow": "أصفر",
+    "gray": "رمادي",
+    "grey": "رمادي",
+    "silver": "فضي",
+    # Functions
+    "toggle": "تبديل",
+    "enabled": "مفعل",
+    "disabled": "معطل",
+    "allow": "سماح",
+    "deny": "رفض",
+    "open": "فتح",
+    "close": "إغلاق",
+    "on": "تشغيل",
+    "off": "إيقاف",
+    "yes": "نعم",
+    "no": "لا",
+    # Mods common
+    "create": "كرييت",
+    "steam": "بخار",
+    "rails": "قضبان",
+    "engine": "محرك",
+    "belt": "حزام ناقل",
+    "gear": "ترس",
+    "shaft": "عمود",
+    "pulley": "بكرة",
+    "chain": "سلسلة",
+    "windmill": "طاحونة هوائية",
+    "water": "ماء",
+    "fire": "نار",
+    "air": "هواء",
+    "earth": "تراب",
+    "stone": "حجر",
+    "wood": "خشب",
+    "plank": "لوح خشبي",
+    "log": "جذع شجرة",
+    "leaves": "أوراق",
+    # Enchantments
+    "enchanted": "مشحون",
+    "enchantment": "سحر",
+    "fortune": "الحظ",
+    "silk": "اللمس الحريري",
+    "unbreaking": "عدم الكسر",
+    "efficiency": "كفاءة",
+    # Game mechanics
+    "survival": "بقاء",
+    "creative": "إبداع",
+    "adventure": "مغامرة",
+    "spectator": "متفرج",
+    "peaceful": "هادئ",
+    "easy": "سهل",
+    "hard": "صعب",
+}
+
+# 语言 -> 术语词典映射表
+LANG_TERMS_DICT = {
+    "zh_cn": MC_TERMS_DICT,
+    "zh_tw": MC_TERMS_DICT,  # 繁体暂用简体词典（后续可单独维护）
+    "ar_sa": MC_TERMS_DICT_AR_SA,
 }
 
 
@@ -260,7 +368,7 @@ def _generate_zh_cn(
             continue
 
         for key, value in entries:
-            translated = _simple_translate(value)
+            translated = _simple_translate(value, target_lang)
             zh_cn[key] = translated
 
     # 质量说明

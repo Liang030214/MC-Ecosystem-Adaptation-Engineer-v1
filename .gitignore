@@ -32,6 +32,36 @@ temp/
 *.log
 *.tmp
 
+# 用户数据（不上传）
+data/auth_state.json
+data/auth_cache.json
+data/ip_geo_cache.json
+data/orders.json
+data/version_check_state.json
+data/payment/*.png
+data/payment/*.jpg
+
+# 🔒 敏感配置文件（绝对不能上传到GitHub！）
+# 管理员配置（包含管理员密钥、备份路径等）
+server/data/admin_config.json
+server/data/*.bak
+server/data/backups/
+.env
+.env.local
+.env.*.local
+*.env
+
+# 🔒 敏感环境变量脚本（包含密钥/密码的启动脚本）
+start_admin_server_with_key.bat
+start_admin_server_with_key.sh
+start_server_secret.bat
+start_server_secret.sh
+
+# 🔒 预编译的二进制（如果只在本地发布）
+# 注: 如果你想把 .pyd 发给用户但不上传到 GitHub，就保留这行；如果要上传请注释掉
+# core/auth_manager.pyd
+# core/auth_manager.pyi
+
 # 构建脚本（开发用，不上传）
 build.py
 build_*.py
@@ -45,6 +75,16 @@ _git_push*.bat
 _*.py
 _*.bat
 *.bat.local
+
+# 发布脚本（包含密钥的）
+deploy_*.py
+deploy_*.sh
+release_secure*.py
+release_secure*.bat
+
+# 混淆工具临时文件
+_obfuscated_*.py
+_pyd_build_temp/
 
 # 测试相关
 tests/
@@ -65,11 +105,6 @@ release/*.tar.gz
 release/github_package_*/
 release/github_release_v*.md
 release/social_media_kit.md
-
-# 用户数据（不上传）
-data/auth_state.json
-data/payment/*.png
-data/payment/*.jpg
 
 # 其他辅助文件
 PROJECT_SUMMARY_EN.txt

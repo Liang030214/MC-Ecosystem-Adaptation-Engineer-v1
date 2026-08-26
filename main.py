@@ -505,6 +505,34 @@ def build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help=t("help.reset_free_period"),
     )
+    
+    parser.add_argument(
+        "--show-machine-id",
+        action="store_true",
+        help="显示您的机器码",
+    )
+
+    parser.add_argument(
+        "--query-auth",
+        action="store_true",
+        help="查询本机授权状态（JSON格式，适合Agent调用）",
+    )
+
+    parser.add_argument(
+        "--list-plans",
+        action="store_true",
+        help="查看可用套餐列表",
+    )
+
+    parser.add_argument(
+        "--api-server",
+        metavar="PORT",
+        type=int,
+        nargs="?",
+        const=8765,
+        default=None,
+        help="启动本地HTTP API服务器（供Agent直接调用），默认端口8765",
+    )
 
     return parser
 
@@ -537,6 +565,26 @@ def main(argv: Optional[list] = None) -> int:
         Exit code 0=success 1=failure
     """
     print_banner()
+
+    # === 版本升级/紧急通知检查（下版本#3-3 双通道提醒）===
+    try:
+        from core.version_checker import check_for_updates
+        from core.version_ui import show_console_banner_if_needed, show_popup_html_if_needed
+        _update_info = check_for_updates(force=False)
+        # 通道1：控制台顶部横幅（每次会话最多显示1次）
+        _banner_shown = show_console_banner_if_needed(_update_info)
+        # 通道2：右下角HTML弹窗（不自动打开，仅生成文件到output/，任务结束后用户可手动打开；
+        #         未来接入Agent运行器的弹窗能力后，可以改为自动弹出）
+        _popup_path = show_popup_html_if_needed(_update_info)
+        if _popup_path and _banner_shown:
+            import logging as _vc_log
+            _vc_log.getLogger(__name__).debug(
+                "[版本UI] 弹窗已生成，如需查看请在浏览器打开: file:///{}".format(_popup_path)
+            )
+    except Exception as _vc_err:
+        # 版本检查失败绝对不能影响主流程，吞掉所有异常
+        import logging as _vc_log
+        _vc_log.getLogger(__name__).info("[版本检查] 非关键模块异常，已跳过: {}".format(_vc_err))
 
     config.ensure_output_dirs()
 
@@ -582,12 +630,433 @@ def main(argv: Optional[list] = None) -> int:
         print(t("auth.free_period_reset"), flush=True)
         return 0
 
+    if args.show_machine_id:
+        from core.auth_manager import get_machine_id, _load_auth_state, _ensure_first_use_recorded
+        # 确保首次使用记录（会显示欢迎提示）
+        state = _load_auth_state()
+        state = _ensure_first_use_recorded(state)
+        # 显示当前机器码
+        machine_id = state.get("machine_id", get_machine_id())
+        print("\n" + "=" * 60)
+        print("  📍 您的机器码:")
+        print("=" * 60)
+        print(f"\n  {machine_id}\n")
+        print("=" * 60)
+        # 尝试复制到剪贴板
+        try:
+            import subprocess
+            import sys
+            if sys.platform == "win32":
+                subprocess.run("clip", input=machine_id, capture_output=True, text=True)
+                print("  ✅ 机器码已复制到剪贴板\n")
+        except Exception:
+            print("  💡 请手动复制上面的机器码\n")
+        return 0
+
+    if args.query_auth:
+        from core.auth_manager import get_auth_status_json
+        import json
+        # 以JSON格式输出授权状态，适合Agent直接解析
+        status = get_auth_status_json()
+        print(json.dumps(status, ensure_ascii=False, indent=2))
+        return 0
+
+    if args.list_plans:
+        from core.auth_manager import print_available_plans
+        print_available_plans()
+        return 0
+
+    if args.api_server is not None:
+        return run_local_api_server(args.api_server)
+
     if not args.feature:
         parser.print_help()
         print(f"\n{t('error.missing_feature')}")
         return 1
 
     return dispatch_feature(args.feature, args)
+
+
+def run_local_api_server(port: int = 8765) -> int:
+    """启动本地HTTP API服务器（供Agent直接调用自助查询功能）
+
+    提供的接口:
+        GET  /api/machine-id        获取本机机器码
+        GET  /api/auth/status       获取本机授权状态（JSON）
+        GET  /api/auth/plans        获取可用套餐列表（JSON）
+        GET  /api/health            健康检查
+        GET  /api/version/check     手动触发版本检查并返回结果（JSON，含UI建议）
+        GET  /api/version-action    版本弹窗按钮回写（action=remind_later|skip&version=）
+        GET  /                      API说明文档
+
+    Args:
+        port: 监听端口，默认8765
+
+    Returns:
+        退出码
+    """
+    import json
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+    from urllib.parse import urlparse, parse_qs
+
+    from core.auth_manager import (
+        get_auth_status_json,
+        get_available_plans,
+        get_machine_id,
+        _load_auth_state,
+        _ensure_first_use_recorded,
+    )
+
+    class LocalAPIHandler(BaseHTTPRequestHandler):
+        """本地API请求处理器"""
+
+        def log_message(self, format, *args):
+            """重写日志格式，简化输出"""
+            print(f"  [API] {self.address_string()} - {format % args}", flush=True)
+
+        def _set_headers(self, status_code: int = 200, content_type: str = "application/json"):
+            self.send_response(status_code)
+            self.send_header("Content-Type", f"{content_type}; charset=utf-8")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+            self.end_headers()
+
+        def _json_response(self, data: dict, status_code: int = 200):
+            self._set_headers(status_code, "application/json")
+            response = json.dumps(data, ensure_ascii=False, indent=2)
+            self.wfile.write(response.encode("utf-8"))
+
+        def _html_response(self, html: str, status_code: int = 200):
+            self._set_headers(status_code, "text/html")
+            self.wfile.write(html.encode("utf-8"))
+
+        def do_OPTIONS(self):
+            """CORS预检请求处理"""
+            self._set_headers(204)
+
+        def do_GET(self):
+            parsed = urlparse(self.path)
+            path = parsed.path.rstrip("/") or "/"
+
+            # 健康检查
+            if path == "/api/health":
+                self._json_response({
+                    "status": "ok",
+                    "service": "mc-skill-local-api",
+                    "version": "v1.0.4",
+                    "port": port,
+                })
+                return
+
+            # 获取机器码
+            if path == "/api/machine-id":
+                state = _load_auth_state()
+                state = _ensure_first_use_recorded(state)
+                machine_id = state.get("machine_id", get_machine_id())
+                self._json_response({
+                    "machine_id": machine_id,
+                    "message": "请将此机器码提供给管理员或AI Agent以开通授权套餐",
+                })
+                return
+
+            # 获取授权状态
+            if path == "/api/auth/status":
+                status = get_auth_status_json()
+                self._json_response(status)
+                return
+
+            # 获取套餐列表
+            if path == "/api/auth/plans":
+                plans = get_available_plans()
+                self._json_response(plans)
+                return
+
+            # 手动触发版本检查（#3-3 供 Agent 调用）
+            if path == "/api/version/check":
+                try:
+                    from core.version_checker import check_for_updates, get_check_summary
+                    query_params = parse_qs(parsed.query)
+                    force_flag = "force" in query_params or query_params.get("force", ["0"])[0] == "1"
+                    update_info = check_for_updates(force=force_flag)
+                    summary = get_check_summary()
+                    if update_info:
+                        self._json_response({
+                            "needs_update": True,
+                            "update": update_info,
+                            "summary": summary,
+                            "actions": {
+                                "remind_later_url": "/api/version-action?action=remind_later",
+                                "skip_version_url": "/api/version-action?action=skip&version=" + (
+                                    update_info.get("remote_version", "") or ""
+                                ),
+                            },
+                        })
+                    else:
+                        self._json_response({
+                            "needs_update": False,
+                            "update": None,
+                            "summary": summary,
+                        })
+                except Exception as e:
+                    self._json_response({
+                        "needs_update": False,
+                        "error": str(e),
+                    })
+                return
+
+            # 版本UI按钮操作回写（#3-3 供 HTML 弹窗中的 <img> ping 调用）
+            if path == "/api/version-action":
+                try:
+                    from core.version_ui import handle_version_action
+                    query_params = parse_qs(parsed.query)
+                    action = query_params.get("action", [""])[0]
+                    version = query_params.get("version", [None])[0]
+                    result = handle_version_action(action, version)
+                    # 支持 CORS 简单 ping（img.src），返回 1x1 透明 GIF 或 JSON
+                    if "callback" in query_params or parsed.query.startswith("callback="):
+                        resp = json.dumps(result, ensure_ascii=False)
+                        cb = query_params["callback"][0]
+                        self._set_headers(200, "application/javascript")
+                        self.wfile.write("{}({});".format(cb, resp).encode("utf-8"))
+                        return
+                    self._json_response(result)
+                except Exception as e:
+                    self._json_response({"ok": False, "msg": str(e)})
+                return
+
+            # API首页 - 文档说明
+            if path == "/" or path == "/api":
+                html = self._build_api_docs_html()
+                self._html_response(html)
+                return
+
+            # 404
+            self._json_response({
+                "error": "not_found",
+                "message": "接口不存在: {}".format(path),
+                "available_endpoints": [
+                    "GET /api/health",
+                    "GET /api/machine-id",
+                    "GET /api/auth/status",
+                    "GET /api/auth/plans",
+                    "GET /api/version/check",
+                    "GET /api/version-action",
+                ],
+            }, 404)
+
+        def _build_api_docs_html(self) -> str:
+            """构建API文档首页"""
+            state = _load_auth_state()
+            state = _ensure_first_use_recorded(state)
+            machine_id = state.get("machine_id", get_machine_id())
+
+            return f"""<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MC Skill - 本地自助查询 API</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #333;
+        }}
+        .container {{
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }}
+        .header {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 32px 40px;
+        }}
+        .header h1 {{ font-size: 28px; margin-bottom: 8px; }}
+        .header p {{ opacity: 0.9; font-size: 14px; }}
+        .content {{ padding: 32px 40px; }}
+        .machine-id-card {{
+            background: #f0f4ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 28px;
+        }}
+        .machine-id-card .label {{
+            font-size: 13px;
+            color: #6366f1;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }}
+        .machine-id-card .value {{
+            font-family: "Consolas", "Monaco", monospace;
+            font-size: 18px;
+            background: #fff;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #e0e7ff;
+            word-break: break-all;
+            color: #1e1b4b;
+            font-weight: 600;
+        }}
+        .section {{ margin-bottom: 28px; }}
+        .section h2 {{
+            font-size: 18px;
+            color: #1e1b4b;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e0e7ff;
+        }}
+        .endpoint {{
+            background: #fafafa;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }}
+        .endpoint:hover {{
+            border-color: #6366f1;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+        }}
+        .endpoint .method {{
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-right: 10px;
+            letter-spacing: 0.5px;
+        }}
+        .method.get {{ background: #dcfce7; color: #166534; }}
+        .endpoint .path {{
+            font-family: "Consolas", "Monaco", monospace;
+            font-weight: 600;
+            color: #4338ca;
+        }}
+        .endpoint .desc {{
+            margin-top: 8px;
+            padding-left: 84px;
+            font-size: 13px;
+            color: #6b7280;
+        }}
+        .tip {{
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 10px;
+            padding: 16px;
+            color: #92400e;
+            font-size: 13px;
+            line-height: 1.7;
+        }}
+        .tip strong {{ color: #78350f; }}
+        .footer {{
+            text-align: center;
+            padding: 20px 40px;
+            background: #f9fafb;
+            color: #9ca3af;
+            font-size: 12px;
+            border-top: 1px solid #e5e7eb;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔌 MC Skill 本地自助查询 API</h1>
+            <p>供 AI Agent 直接调用的本地接口服务</p>
+        </div>
+        <div class="content">
+            <div class="machine-id-card">
+                <div class="label">📍 当前设备机器码</div>
+                <div class="value">{machine_id}</div>
+            </div>
+            <div class="section">
+                <h2>📡 可用接口列表</h2>
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/api/health</span>
+                    <div class="desc">健康检查，确认API服务是否正常运行</div>
+                </div>
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/api/machine-id</span>
+                    <div class="desc">获取本机机器码（用于授权开通、查询套餐状态等）</div>
+                </div>
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/api/auth/status</span>
+                    <div class="desc">获取完整授权状态（会员等级、使用次数、免费期信息等）</div>
+                </div>
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/api/auth/plans</span>
+                    <div class="desc">获取可用套餐列表（订阅方案、价格、各等级权限说明）</div>
+                </div>
+            </div>
+            <div class="section">
+                <h2>💡 使用说明</h2>
+                <div class="tip">
+                    <strong>Agent调用方式：</strong><br>
+                    • 此API仅在本机运行（127.0.0.1:{port}），不会暴露到公网<br>
+                    • 所有接口均返回 JSON 格式，便于程序解析<br>
+                    • 可直接使用 HTTP GET 请求调用，无需额外认证<br>
+                    • 如需停止服务，在终端按 <strong>Ctrl+C</strong> 即可
+                </div>
+            </div>
+        </div>
+        <div class="footer">
+            MC Skill v1.0.1 · 本地API服务 · 端口 {port}
+        </div>
+    </div>
+</body>
+</html>"""
+
+    # === 启动服务器 ===
+    server = None
+    try:
+        server_address = ("127.0.0.1", port)
+        server = HTTPServer(server_address, LocalAPIHandler)
+    except OSError as e:
+        print(f"\n❌ 端口 {port} 被占用，请使用其他端口：", flush=True)
+        print(f"   python main.py --api-server 8766", flush=True)
+        print(f"   错误信息: {e}\n", flush=True)
+        return 1
+
+    print("\n" + "=" * 65, flush=True)
+    print("  🔌 MC Skill 本地自助查询 API 服务已启动", flush=True)
+    print("=" * 65, flush=True)
+    print(f"  📡 服务地址:  http://127.0.0.1:{port}", flush=True)
+    print(f"  📖 API文档:   http://127.0.0.1:{port}/", flush=True)
+    print(f"  🤖 Agent调用: http://127.0.0.1:{port}/api/auth/status", flush=True)
+    print("-" * 65, flush=True)
+    print("  可用接口:", flush=True)
+    print(f"    GET /api/health         健康检查", flush=True)
+    print(f"    GET /api/machine-id     获取机器码", flush=True)
+    print(f"    GET /api/auth/status    授权状态查询", flush=True)
+    print(f"    GET /api/auth/plans     套餐列表查询", flush=True)
+    print("-" * 65, flush=True)
+    print("  💡 提示: 按 Ctrl+C 停止服务", flush=True)
+    print("=" * 65 + "\n", flush=True)
+
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\n\n  👋 API服务已停止\n", flush=True)
+        server.server_close()
+        return 0
+    except Exception as e:
+        print(f"\n❌ API服务异常: {e}\n", flush=True)
+        server.server_close()
+        return 1
 
 
 if __name__ == "__main__":

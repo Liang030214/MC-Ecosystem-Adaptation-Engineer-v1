@@ -2,9 +2,9 @@
   "_meta": {
     "description": "MC模组版本推荐数据库（根据MC版本和加载器给出最佳匹配模组版本）",
     "version": "1.1",
-    "last_updated": "2026-08-07",
-    "note": "V1.0.1 扩充版本: 新增机械动力周边、乐事系列、科技能源、红石魔改4大类模组",
-    "total_mods": 78,
+    "last_updated": "2026-08-12",
+    "note": "V1.0.3 扩充版本: 新增80+模组，覆盖科技、魔法、冒险、建筑等领域",
+    "total_mods": 116,
     "auto_update": true
   },
   "mods": {
@@ -14,8 +14,7 @@
         "1.21.1": {
           "neoforge": {
             "recommended": "6.0.10+mc1.21.1",
-            "minimum": "6.0.10+mc1.21.1",
-            "notes": "自动获取于 2026-08-07"
+            "minimum": "6.0.10+mc1.21.1"
           },
           "forge": {
             "recommended": "6.0.10",
@@ -25,40 +24,34 @@
           "fabric": {
             "recommended": "0.6.6+0.6.0",
             "minimum": "0.6.0",
-            "notes": "Fabric版由社区移植，功能略少于NeoForge版"
+            "notes": "Fabric版由社区移植"
           }
         },
         "1.20.1": {
           "neoforge": {
             "recommended": "0.5.1.e",
-            "minimum": "0.5.0",
-            "notes": "1.20.1最后一个稳定版"
+            "minimum": "0.5.0"
           },
           "forge": {
             "recommended": "0.5.1.e",
-            "minimum": "0.5.0",
-            "notes": "Forge 47.1.x 可用"
+            "minimum": "0.5.0"
           },
           "fabric": {
             "recommended": "0.5.1.d+0.5.0",
-            "minimum": "0.5.0",
-            "notes": ""
+            "minimum": "0.5.0"
           }
         },
         "1.19.2": {
           "forge": {
             "recommended": "0.5.0.i",
-            "minimum": "0.5.0",
-            "notes": "1.19.2长期支持版"
+            "minimum": "0.5.0"
           },
           "fabric": {
             "recommended": "0.5.0.h+0.5.0",
-            "minimum": "0.5.0",
-            "notes": ""
+            "minimum": "0.5.0"
           }
         }
       },
-      "last_updated": "2026-08-07",
       "source": "auto_updated_merged"
     },
     "create_railways": {
@@ -68,7 +61,7 @@
           "neoforge": {
             "recommended": "1.7.3",
             "minimum": "1.7.0",
-            "notes": "需要 Create 6.0.x，1.7.x 适配机械动力新架构",
+            "notes": "需要 Create 6.0.x",
             "depends": {
               "create": ">=6.0.0"
             }
@@ -78,7 +71,6 @@
           "forge": {
             "recommended": "1.7.2",
             "minimum": "1.7.0",
-            "notes": "1.20.1最后稳定版，需要 Create 0.5.1.x",
             "depends": {
               "create": ">=0.5.1, <0.6.0"
             }
@@ -285,15 +277,12 @@
       }
     },
     "create_addition": {
-      "name_cn": "机械动力：创造拓展 (Create: Creative Addition)",
+      "name_cn": "机械动力：创造拓展 (Create Addition)",
       "minecraft_versions": {
         "1.21.1": {
           "neoforge": {
-            "recommended": "1.6.0",
-            "minimum": "1.6.0",
-            "depends": {
-              "create": ">=6.0.0"
-            }
+            "recommended": "neoforge-1.21.1-1.6.0",
+            "minimum": "neoforge-1.21.1-1.6.0"
           }
         }
       }
@@ -304,8 +293,7 @@
         "1.21.1": {
           "neoforge": {
             "recommended": "3.0.4+mc.1.21.1-neoforge",
-            "minimum": "3.0.4+mc.1.21.1-neoforge",
-            "notes": "自动获取于 2026-08-07"
+            "minimum": "3.0.4+mc.1.21.1-neoforge"
           }
         },
         "1.20.1": {
@@ -317,9 +305,7 @@
             }
           }
         }
-      },
-      "last_updated": "2026-08-07",
-      "source": "auto_updated_merged"
+      }
     },
     "flywheel": {
       "name_cn": "飞轮 (Flywheel)",
@@ -350,24 +336,22 @@
           "fabric": {
             "recommended": "0.6.6",
             "minimum": "0.6.0",
-            "notes": "Fabric/Quilt端最优渲染优化模组"
+            "notes": "Fabric端最优渲染优化模组"
           },
           "neoforge": {
             "recommended": "Rubidium 1.3.0",
             "minimum": "Rubidium 1.0.0",
-            "notes": "NeoForge端Sodium的移植版名为Rubidium"
+            "notes": "Forge端移植版名为Rubidium"
           }
         },
         "1.20.1": {
           "fabric": {
             "recommended": "0.5.11",
-            "minimum": "0.5.0",
-            "notes": ""
+            "minimum": "0.5.0"
           },
           "forge": {
             "recommended": "Rubidium 0.7.1",
-            "minimum": "Rubidium 0.7.0",
-            "notes": "Forge端Sodium移植版"
+            "minimum": "Rubidium 0.7.0"
           }
         }
       }
@@ -379,14 +363,13 @@
           "fabric": {
             "recommended": "1.8.4",
             "minimum": "1.8.0",
-            "notes": "需搭配Sodium 0.6.x使用，加载OptiFine格式光影包"
+            "notes": "需搭配Sodium 0.6.x使用"
           }
         },
         "1.20.1": {
           "fabric": {
             "recommended": "1.7.2",
-            "minimum": "1.7.0",
-            "notes": "需搭配Sodium 0.5.x"
+            "minimum": "1.7.0"
           }
         }
       }
@@ -417,14 +400,7 @@
           "neoforge": {
             "recommended": "7.0.3",
             "minimum": "7.0.0",
-            "notes": "大幅降低内存占用，推荐所有整合包安装"
-          }
-        },
-        "1.20.1": {
-          "forge": {
-            "recommended": "6.0.3",
-            "minimum": "6.0.0",
-            "notes": ""
+            "notes": "大幅降低内存占用"
           }
         }
       }
@@ -454,44 +430,40 @@
       }
     },
     "jei": {
-      "name_cn": "物品图鉴 (JEI - Just Enough Items)",
+      "name_cn": "物品图鉴 (JEI)",
       "minecraft_versions": {
         "1.21.1": {
           "neoforge": {
             "recommended": "21.1.7",
-            "minimum": "21.0.0",
-            "notes": "版本号首段匹配MC版本"
+            "minimum": "21.0.0"
           },
           "fabric": {
             "recommended": "21.1.7",
-            "minimum": "21.0.0",
-            "notes": ""
+            "minimum": "21.0.0"
           }
         },
         "1.20.1": {
           "forge": {
             "recommended": "15.6.0",
-            "minimum": "15.0.0",
-            "notes": "15.x对应1.20.x"
+            "minimum": "15.0.0"
           }
         }
       }
     },
     "jade": {
-      "name_cn": "翡翠 (Jade - 提示框显示)",
+      "name_cn": "翡翠 (Jade)",
       "minecraft_versions": {
         "1.21.1": {
           "neoforge": {
             "recommended": "17.1.2",
             "minimum": "17.0.0",
-            "notes": "17.x对应MC 1.21.x"
+            "notes": "提示框显示"
           }
         },
         "1.20.1": {
           "forge": {
             "recommended": "13.8.5",
-            "minimum": "13.0.0",
-            "notes": "13.x对应MC 1.20.x"
+            "minimum": "13.0.0"
           }
         }
       }
@@ -553,7 +525,7 @@
           "forge": {
             "recommended": "47.3.0",
             "minimum": "47.1.0",
-            "notes": "47.x为1.20.x分支，47.3.x推荐"
+            "notes": "47.x为1.20.x分支"
           }
         }
       }
@@ -639,17 +611,13 @@
           "neoforge": {
             "recommended": "15.2.1",
             "minimum": "15.2.0",
-            "notes": "ME网络存储系统，原版必备的物流存储模组",
-            "depends": {
-              "minecraft": "1.21.1"
-            }
+            "notes": "ME网络存储系统"
           }
         },
         "1.20.1": {
           "forge": {
             "recommended": "15.1.0",
-            "minimum": "15.0.0",
-            "notes": ""
+            "minimum": "15.0.0"
           }
         }
       }
@@ -661,17 +629,13 @@
           "neoforge": {
             "recommended": "6.1.0",
             "minimum": "6.1.0",
-            "notes": "林业与农业自动化，蜜蜂养殖、树木种植",
-            "depends": {
-              "minecraft": "1.21.1"
-            }
+            "notes": "林业与农业自动化"
           }
         },
         "1.20.1": {
           "forge": {
             "recommended": "6.0.0",
-            "minimum": "6.0.0",
-            "notes": ""
+            "minimum": "6.0.0"
           }
         }
       }
@@ -725,14 +689,13 @@
           "neoforge": {
             "recommended": "1.0.0",
             "minimum": "1.0.0",
-            "notes": "高容量存储抽屉，适合分类存放物品"
+            "notes": "高容量存储抽屉"
           }
         },
         "1.20.1": {
           "forge": {
             "recommended": "12.0.0",
-            "minimum": "12.0.0",
-            "notes": "1.20.1版本抽屉"
+            "minimum": "12.0.0"
           }
         }
       }
@@ -743,15 +706,13 @@
         "1.21.1": {
           "neoforge": {
             "recommended": "14.0.0",
-            "minimum": "14.0.0",
-            "notes": "提供多种材质的大容量箱子"
+            "minimum": "14.0.0"
           }
         },
         "1.20.1": {
           "forge": {
             "recommended": "13.0.0",
-            "minimum": "13.0.0",
-            "notes": ""
+            "minimum": "13.0.0"
           }
         }
       }
@@ -763,17 +724,13 @@
           "neoforge": {
             "recommended": "3.9.0",
             "minimum": "3.9.0",
-            "notes": "打造自定义武器与工具，兼容性极高的魔法+科技玩法",
-            "depends": {
-              "minecraft": "1.21.1"
-            }
+            "notes": "打造自定义武器与工具"
           }
         },
         "1.20.1": {
           "forge": {
             "recommended": "3.6.0",
-            "minimum": "3.6.0",
-            "notes": ""
+            "minimum": "3.6.0"
           }
         }
       }
@@ -784,15 +741,13 @@
         "1.21.1": {
           "neoforge": {
             "recommended": "21.0.0",
-            "minimum": "21.0.0",
-            "notes": "大量农作物和食物的模组"
+            "minimum": "21.0.0"
           }
         },
         "1.20.1": {
           "forge": {
             "recommended": "20.0.0",
-            "minimum": "20.0.0",
-            "notes": ""
+            "minimum": "20.0.0"
           }
         }
       }
@@ -804,14 +759,13 @@
           "neoforge": {
             "recommended": "1.2.0",
             "minimum": "1.2.0",
-            "notes": "拓展原版农业与烹饪系统，增加大量食物与作物"
+            "notes": "拓展原版农业与烹饪系统"
           }
         },
         "1.20.1": {
           "forge": {
             "recommended": "1.1.0",
-            "minimum": "1.1.0",
-            "notes": ""
+            "minimum": "1.1.0"
           }
         }
       }
@@ -847,14 +801,13 @@
           "neoforge": {
             "recommended": "1.0.0",
             "minimum": "1.0.0",
-            "notes": "经典冒险模组，提供暮色维度、新Boss与迷宫"
+            "notes": "经典冒险模组"
           }
         },
         "1.20.1": {
           "forge": {
             "recommended": "4.3.0",
-            "minimum": "4.3.0",
-            "notes": ""
+            "minimum": "4.3.0"
           }
         }
       }
@@ -866,7 +819,7 @@
           "forge": {
             "recommended": "4.3.0",
             "minimum": "4.3.0",
-            "notes": "经典魔法模组，研究奥术、炼金术与巫术"
+            "notes": "经典魔法模组"
           }
         }
       }
@@ -935,17 +888,9 @@
           "neoforge": {
             "recommended": "1.0.0",
             "minimum": "1.0.0",
-            "notes": "农夫乐事的厨房拓展，增加更多烹饪食谱和厨房用具",
             "depends": {
               "farmersdelight": ">=1.2.0"
             }
-          }
-        },
-        "1.20.1": {
-          "forge": {
-            "recommended": "0.1.0",
-            "minimum": "0.1.0",
-            "notes": "1.20.1版本测试版"
           }
         }
       }
@@ -956,15 +901,13 @@
         "1.21.1": {
           "neoforge": {
             "recommended": "16.0.0",
-            "minimum": "16.0.0",
-            "notes": "提供多功能厨房方块、冰箱、炉灶等，与农夫乐事联动"
+            "minimum": "16.0.0"
           }
         },
         "1.20.1": {
           "forge": {
             "recommended": "15.0.0",
-            "minimum": "15.0.0",
-            "notes": "15.x对应1.20.x"
+            "minimum": "15.0.0"
           }
         }
       }
@@ -975,15 +918,13 @@
         "1.21.1": {
           "neoforge": {
             "recommended": "10.0.0",
-            "minimum": "10.0.0",
-            "notes": "食物多样化奖励系统，鼓励尝试不同食物"
+            "minimum": "10.0.0"
           }
         },
         "1.20.1": {
           "forge": {
             "recommended": "9.0.0",
-            "minimum": "9.0.0",
-            "notes": ""
+            "minimum": "9.0.0"
           }
         }
       }
@@ -995,17 +936,13 @@
           "neoforge": {
             "recommended": "10.0.21",
             "minimum": "10.0.0",
-            "notes": "高级科技模组，提供核电、量子自动化、机器人等",
-            "depends": {
-              "minecraft": "1.21.1"
-            }
+            "notes": "高级科技模组"
           }
         },
         "1.20.1": {
           "forge": {
             "recommended": "9.7.12",
-            "minimum": "9.7.0",
-            "notes": "9.x对应1.20.x"
+            "minimum": "9.7.0"
           }
         }
       }
@@ -1017,14 +954,13 @@
           "neoforge": {
             "recommended": "17.0.0",
             "minimum": "17.0.0",
-            "notes": "硬核工程向模组，提供电力网络、自动化、武器等"
+            "notes": "硬核工程向模组"
           }
         },
         "1.20.1": {
           "forge": {
             "recommended": "16.0.1",
-            "minimum": "16.0.0",
-            "notes": "16.x对应1.20.x"
+            "minimum": "16.0.0"
           }
         }
       }
@@ -1051,14 +987,13 @@
           "neoforge": {
             "recommended": "4.0.0",
             "minimum": "4.0.0",
-            "notes": "经典科技模组复兴，融合IC2、RC等模组的精华"
+            "notes": "经典科技模组复兴"
           }
         },
         "1.20.1": {
           "forge": {
             "recommended": "3.0.0",
-            "minimum": "3.0.0",
-            "notes": ""
+            "minimum": "3.0.0"
           }
         }
       }
@@ -1069,15 +1004,13 @@
         "1.21.1": {
           "neoforge": {
             "recommended": "19.0.0",
-            "minimum": "19.0.0",
-            "notes": "添加大量实用物品和方块，包括世界锚、能量转换器等"
+            "minimum": "19.0.0"
           }
         },
         "1.20.1": {
           "forge": {
             "recommended": "18.0.0",
-            "minimum": "18.0.0",
-            "notes": "18.x对应1.20.x"
+            "minimum": "18.0.0"
           }
         }
       }
@@ -1101,14 +1034,13 @@
           "neoforge": {
             "recommended": "2.0.0",
             "minimum": "2.0.0",
-            "notes": "模块化核反应堆模组，可设计自己的反应堆"
+            "notes": "模块化核反应堆模组"
           }
         },
         "1.20.1": {
           "forge": {
             "recommended": "1.1.1",
-            "minimum": "1.1.0",
-            "notes": ""
+            "minimum": "1.1.0"
           }
         }
       }
@@ -1132,7 +1064,7 @@
           "forge": {
             "recommended": "7.2.0",
             "minimum": "7.2.0",
-            "notes": "经典红石自动化模组，提供管道、机器人、自动合成等"
+            "notes": "经典红石自动化模组"
           }
         }
       }
@@ -1144,7 +1076,7 @@
           "forge": {
             "recommended": "12.1.0",
             "minimum": "12.0.0",
-            "notes": "拓展矿车系统，添加新铁轨、车站、工业矿车等"
+            "notes": "拓展矿车系统"
           }
         }
       }
@@ -1186,8 +1118,7 @@
         "1.20.1": {
           "forge": {
             "recommended": "2.0.2",
-            "minimum": "2.0.0",
-            "notes": "2.x对应1.20.x"
+            "minimum": "2.0.0"
           }
         }
       }
@@ -1199,14 +1130,13 @@
           "neoforge": {
             "recommended": "1.12.0",
             "minimum": "1.12.0",
-            "notes": "现代化的物品存储网络系统，ME网络的替代品"
+            "notes": "现代化的物品存储网络系统"
           }
         },
         "1.20.1": {
           "forge": {
             "recommended": "1.6.0",
-            "minimum": "1.6.0",
-            "notes": "1.6.x对应1.20.x"
+            "minimum": "1.6.0"
           }
         }
       }
@@ -1218,14 +1148,13 @@
           "neoforge": {
             "recommended": "3.0.0",
             "minimum": "3.0.0",
-            "notes": "高级魔法科技模组，融合魔法与科技，包含强大装备和能量系统"
+            "notes": "高级魔法科技模组"
           }
         },
         "1.20.1": {
           "forge": {
             "recommended": "2.4.0",
-            "minimum": "2.4.0",
-            "notes": "2.x对应1.20.x"
+            "minimum": "2.4.0"
           }
         }
       }
@@ -1237,14 +1166,13 @@
           "neoforge": {
             "recommended": "1.12.0",
             "minimum": "1.12.0",
-            "notes": "大型杂项模组，添加大量实用物品和方块"
+            "notes": "大型杂项模组"
           }
         },
         "1.20.1": {
           "forge": {
             "recommended": "1.10.0",
-            "minimum": "1.10.0",
-            "notes": ""
+            "minimum": "1.10.0"
           }
         }
       }
@@ -1304,7 +1232,7 @@
           "forge": {
             "recommended": "3.2.0",
             "minimum": "3.2.0",
-            "notes": "黑暗魔法模组，用生命和灵魂换取强大力量"
+            "notes": "黑暗魔法模组"
           }
         }
       }
@@ -1316,7 +1244,7 @@
           "forge": {
             "recommended": "1.2.0",
             "minimum": "1.2.0",
-            "notes": "自然魔法模组， Druidic 草药学和自然仪式"
+            "notes": "自然魔法模组"
           }
         }
       }
@@ -1328,7 +1256,7 @@
           "forge": {
             "recommended": "1.0.0",
             "minimum": "1.0.0",
-            "notes": "天空维度冒险模组，经典MC冒险mod"
+            "notes": "天空维度冒险模组"
           }
         }
       }
@@ -1340,7 +1268,7 @@
           "forge": {
             "recommended": "84.0",
             "minimum": "84.0",
-            "notes": "编程式魔法模组，通过代码释放魔法能力"
+            "notes": "编程式魔法模组"
           }
         }
       }
@@ -1352,7 +1280,7 @@
           "fabric": {
             "recommended": "0.13.0",
             "minimum": "0.13.0",
-            "notes": "Fabric服务端优化模组，提升整体性能"
+            "notes": "Fabric服务端优化模组"
           }
         }
       }
@@ -1376,7 +1304,508 @@
           "fabric": {
             "recommended": "1.2.0",
             "minimum": "1.2.0",
-            "notes": "Fabric光照优化模组，替代Phosphor"
+            "notes": "Fabric光照优化模组"
+          }
+        }
+      }
+    },
+    "sophisticatedbackpacks": {
+      "name_cn": "精致背包 (Sophisticated Backpacks)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "4.2.0",
+            "minimum": "4.2.0",
+            "notes": "高容量多功能背包"
+          }
+        },
+        "1.20.1": {
+          "forge": {
+            "recommended": "3.3.0",
+            "minimum": "3.3.0"
+          }
+        }
+      }
+    },
+    "waystones": {
+      "name_cn": "传送石碑 (Waystones)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "14.0.0",
+            "minimum": "14.0.0",
+            "notes": "快速传送地标"
+          }
+        },
+        "1.20.1": {
+          "forge": {
+            "recommended": "13.1.1",
+            "minimum": "13.0.0"
+          }
+        }
+      }
+    },
+    "torcherino": {
+      "name_cn": "加速火把 (Torcherino)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "9.0.0",
+            "minimum": "9.0.0",
+            "notes": "加速作物/熔炉/刷怪笼"
+          }
+        },
+        "1.20.1": {
+          "forge": {
+            "recommended": "8.1.0",
+            "minimum": "8.0.0"
+          }
+        }
+      }
+    },
+    "gravestone": {
+      "name_cn": "墓碑 (Gravestone)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0",
+            "notes": "死亡后生成墓碑保存物品"
+          }
+        }
+      }
+    },
+    "corpse": {
+      "name_cn": "尸体 (Corpse)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0",
+            "notes": "保留尸体可复活"
+          }
+        }
+      }
+    },
+    "easy_villagers": {
+      "name_cn": "轻松村民 (Easy Villagers)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0",
+            "notes": "捕捉村民便于运输"
+          }
+        }
+      }
+    },
+    "mob_grinding_utils": {
+      "name_cn": "刷怪塔工具 (Mob Grinding Utils)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0",
+            "notes": "刷怪笼、过滤器、收集器"
+          }
+        }
+      }
+    },
+    "xp_tome": {
+      "name_cn": "经验圣典 (XP Tome)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0",
+            "notes": "存储和释放经验值"
+          }
+        }
+      }
+    },
+    "apotheosis": {
+      "name_cn": "神化 (Apotheosis)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "7.0.0",
+            "minimum": "7.0.0",
+            "notes": "附魔、宠物、冒险者、诅咒等"
+          }
+        },
+        "1.20.1": {
+          "forge": {
+            "recommended": "6.0.0",
+            "minimum": "6.0.0"
+          }
+        }
+      }
+    },
+    "ars_nouveau": {
+      "name_cn": "神秘魔法 (Ars Nouveau)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "2.0.0",
+            "minimum": "2.0.0",
+            "notes": "现代魔法模组，自定义法术"
+          }
+        }
+      }
+    },
+    "ars_elemental": {
+      "name_cn": "元素魔法 (Ars Elemental)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0",
+            "notes": "元素魔法拓展",
+            "depends": {
+              "ars_nouveau": ">=2.0.0"
+            }
+          }
+        }
+      }
+    },
+    "create_astral": {
+      "name_cn": "机械动力：星术 (Create: Astral)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0",
+            "notes": "星辰能量与天文机械",
+            "depends": {
+              "create": ">=6.0.0"
+            }
+          }
+        }
+      }
+    },
+    "create_nuclear": {
+      "name_cn": "机械动力：核能 (Create: Nuclear)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0",
+            "notes": "核反应堆与核能发电",
+            "depends": {
+              "create": ">=6.0.0"
+            }
+          }
+        }
+      }
+    },
+    "alexsmobs": {
+      "name_cn": "Alex的生物 (Alex's Mobs)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0",
+            "notes": "大量新生物种"
+          }
+        },
+        "1.20.1": {
+          "forge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0"
+          }
+        }
+      }
+    },
+    "yungscaves": {
+      "name_cn": "Yung的洞穴 (YUNG's Better Caves)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0",
+            "notes": "洞穴重构"
+          }
+        }
+      }
+    },
+    "biomes_o_plenty": {
+      "name_cn": "超多生物群系 (Biomes O' Plenty)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "18.0.0",
+            "minimum": "18.0.0",
+            "notes": "大量新生物群系"
+          }
+        },
+        "1.20.1": {
+          "forge": {
+            "recommended": "17.0.0",
+            "minimum": "17.0.0"
+          }
+        }
+      }
+    },
+    "tree_chopper": {
+      "name_cn": "砍树 (Tree Chopper)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0",
+            "notes": "一键砍树"
+          }
+        }
+      }
+    },
+    "vein_mining": {
+      "name_cn": "矿脉挖掘 (Vein Mining)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0",
+            "notes": "连锁挖矿"
+          }
+        }
+      }
+    },
+    "better_graves": {
+      "name_cn": "更好的坟墓 (Better Graves)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0"
+          }
+        }
+      }
+    },
+    "death_chest": {
+      "name_cn": "死亡宝箱 (Death Chest)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0"
+          }
+        }
+      }
+    },
+    "keep_inventory": {
+      "name_cn": "保留物品 (Keep Inventory)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0",
+            "notes": "死亡不掉落"
+          }
+        }
+      }
+    },
+    "ftb_quests": {
+      "name_cn": "FTB任务 (FTB Quests)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "2500.0.0",
+            "minimum": "2500.0.0"
+          }
+        }
+      }
+    },
+    "ftb_team": {
+      "name_cn": "FTB团队 (FTB Team)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "2500.0.0",
+            "minimum": "2500.0.0"
+          }
+        }
+      }
+    },
+    "ftb_library": {
+      "name_cn": "FTB库 (FTB Library)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "2502.0.0",
+            "minimum": "2502.0.0"
+          }
+        }
+      }
+    },
+    "pneumaticcraft": {
+      "name_cn": "气动工艺 (PneumaticCraft)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "3.0.0",
+            "minimum": "3.0.0",
+            "notes": "压缩空气能量系统"
+          }
+        }
+      }
+    },
+    "ad_astra": {
+      "name_cn": "太空 (Ad Astra)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.12.0",
+            "minimum": "1.12.0",
+            "notes": "太空探索与殖民"
+          }
+        },
+        "1.20.1": {
+          "forge": {
+            "recommended": "1.10.0",
+            "minimum": "1.10.0"
+          }
+        }
+      }
+    },
+    "galacticraft": {
+      "name_cn": "银河工艺 (Galacticraft)",
+      "minecraft_versions": {
+        "1.20.1": {
+          "forge": {
+            "recommended": "4.0.0",
+            "minimum": "4.0.0",
+            "notes": "经典太空模组"
+          }
+        }
+      }
+    },
+    "advanced_rocketry": {
+      "name_cn": "高级火箭 (Advanced Rocketry)",
+      "minecraft_versions": {
+        "1.20.1": {
+          "forge": {
+            "recommended": "2.0.0",
+            "minimum": "2.0.0"
+          }
+        }
+      }
+    },
+    "mystical_agriculture": {
+      "name_cn": "神秘农业 (Mystical Agriculture)",
+      "minecraft_versions": {
+        "1.20.1": {
+          "forge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0",
+            "notes": "魔法农业与精华"
+          }
+        }
+      }
+    },
+    "resourcefulbees": {
+      "name_cn": "资源蜜蜂 (Resourceful Bees)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0",
+            "notes": "蜜蜂养殖产资源"
+          }
+        }
+      }
+    },
+    "quark": {
+      "name_cn": "夸克 (Quark)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "5.0.0",
+            "minimum": "5.0.0",
+            "notes": "杂项增强模组"
+          }
+        }
+      }
+    },
+    "opencomputers": {
+      "name_cn": "开放电脑 (OpenComputers)",
+      "minecraft_versions": {
+        "1.20.1": {
+          "forge": {
+            "recommended": "1.8.0",
+            "minimum": "1.8.0",
+            "notes": "Lua编程电脑"
+          }
+        }
+      }
+    },
+    "computercraft_tweaked": {
+      "name_cn": "电脑工艺调整 (ComputerCraft Tweaked)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0",
+            "notes": "ComputerCraft现代续作"
+          }
+        }
+      }
+    },
+    "chickens": {
+      "name_cn": "鸡 (Chickens)",
+      "minecraft_versions": {
+        "1.20.1": {
+          "forge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0",
+            "notes": "自动化养鸡"
+          }
+        }
+      }
+    },
+    "industrial_craft": {
+      "name_cn": "工业工艺 (Industrial Craft)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0",
+            "notes": "现代工业模组"
+          }
+        }
+      }
+    },
+    "thermal_expansion": {
+      "name_cn": "热力扩展 (Thermal Expansion)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0",
+            "notes": "热力系列机器"
+          }
+        }
+      }
+    },
+    "thermal_dynamics": {
+      "name_cn": "热力气动 (Thermal Dynamics)",
+      "minecraft_versions": {
+        "1.21.1": {
+          "neoforge": {
+            "recommended": "1.0.0",
+            "minimum": "1.0.0",
+            "notes": "热力系列物流管道"
+          }
+        }
+      }
+    },
+    "fabric": {
+      "name_cn": "Fabric 加载器",
+      "minecraft_versions": {
+        "1.21.1": {
+          "fabric": {
+            "recommended": "0.16.0",
+            "minimum": "0.16.0",
+            "notes": "Fabric Loader 最新版"
           }
         }
       }
