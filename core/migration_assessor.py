@@ -220,6 +220,93 @@ MC_VERSION_COMPATIBILITY = {
             "数据生成器重写",
         ],
     },
+    # === V1.0.5 新增：MC 1.21.2 / 1.21.3 / 1.21.4 兼容矩阵 ===
+    ("1.21.1", "1.21.2"): {
+        "api_stability": "high",
+        "common_changes": [
+            "小版本补丁，API 基本稳定",
+            "可能有少量 bug 修复和性能优化",
+            "数据包版本号微调",
+        ],
+    },
+    ("1.21.1", "1.21.3"): {
+        "api_stability": "high",
+        "common_changes": [
+            "小版本补丁，API 基本稳定",
+            "可能有少量 bug 修复",
+        ],
+    },
+    ("1.21.1", "1.21.4"): {
+        "api_stability": "high",
+        "common_changes": [
+            "小版本补丁累积，API 基本稳定",
+            "可能有数据包版本微调",
+        ],
+    },
+    ("1.21.2", "1.21.3"): {
+        "api_stability": "high",
+        "common_changes": [
+            "极小版本补丁，API 几乎无变化",
+        ],
+    },
+    ("1.21.2", "1.21.4"): {
+        "api_stability": "high",
+        "common_changes": [
+            "小版本补丁累积，API 几乎无变化",
+        ],
+    },
+    ("1.21.3", "1.21.4"): {
+        "api_stability": "high",
+        "common_changes": [
+            "极小版本补丁，API 无变化",
+        ],
+    },
+    ("1.20.1", "1.21.2"): {
+        "api_stability": "medium",
+        "common_changes": [
+            "方块实体 API 变更",
+            "数据包格式升级",
+            "部分注册方法签名变化",
+            "1.21.2 为 1.21.x 系列补丁版",
+        ],
+    },
+    ("1.20.1", "1.21.3"): {
+        "api_stability": "medium",
+        "common_changes": [
+            "方块实体 API 变更",
+            "数据包格式升级",
+            "1.21.3 为 1.21.x 系列补丁版",
+        ],
+    },
+    ("1.20.1", "1.21.4"): {
+        "api_stability": "medium",
+        "common_changes": [
+            "方块实体 API 变更",
+            "数据包格式升级",
+            "1.21.4 为 1.21.x 系列最新补丁版",
+        ],
+    },
+    ("1.20.4", "1.21.2"): {
+        "api_stability": "medium",
+        "common_changes": [
+            "跨版本升级，API 有中等变化",
+            "1.21.2 为 1.21.x 系列补丁版",
+        ],
+    },
+    ("1.20.4", "1.21.3"): {
+        "api_stability": "medium",
+        "common_changes": [
+            "跨版本升级，API 有中等变化",
+            "1.21.3 为 1.21.x 系列补丁版",
+        ],
+    },
+    ("1.20.4", "1.21.4"): {
+        "api_stability": "medium",
+        "common_changes": [
+            "跨版本升级，API 有中等变化",
+            "1.21.4 为 1.21.x 系列最新补丁版",
+        ],
+    },
 }
 
 
@@ -240,6 +327,7 @@ def _parse_mod_metadata(jar_path: str) -> Dict[str, Any]:
         "META-INF/mods.toml",
         "META-INF/neoforge.mods.toml",
         "fabric.mod.json",
+        "quilt.mod.json",
     ]
     
     for meta_file in metadata_files:
@@ -273,8 +361,33 @@ def _parse_mod_metadata(jar_path: str) -> Dict[str, Any]:
                 metadata["mod_version"] = data.get("version", "")
                 metadata["description"] = data.get("description", "")
                 metadata["authors"] = ", ".join(data.get("authors", []))
-                metadata["dependencies"] = list(data.get("depends", {}).keys())
-                metadata["loader"] = "fabric"
+                deps = data.get("depends", {})
+                metadata["dependencies"] = list(deps.keys())
+                # 检查是否是 Quilt 模组（fabric.mod.json 依赖 quilt_loader）
+                if "quilt_loader" in deps or "quilt_base" in deps:
+                    metadata["loader"] = "quilt"
+                else:
+                    metadata["loader"] = "fabric"
+                
+            elif meta_file == "quilt.mod.json":
+                # Quilt JSON 格式（V1.0.5 新增）
+                data = json.loads(content)
+                quilt_loader = data.get("quilt_loader", {})
+                metadata["mod_id"] = quilt_loader.get("id", "")
+                metadata["mod_version"] = quilt_loader.get("version", "")
+                metadata["loader"] = "quilt"
+                # 名称和描述在 metadata 字段
+                mdata = data.get("metadata", {})
+                metadata["mod_name"] = mdata.get("name", metadata["mod_id"])
+                metadata["description"] = mdata.get("description", "")
+                contributors = mdata.get("contributors", {})
+                if isinstance(contributors, dict):
+                    metadata["authors"] = ", ".join(contributors.keys())
+                elif isinstance(contributors, list):
+                    metadata["authors"] = ", ".join(contributors)
+                # 依赖
+                qdeps = quilt_loader.get("depends", {})
+                metadata["dependencies"] = list(qdeps.keys()) if isinstance(qdeps, dict) else []
                 
             if metadata["mod_id"]:
                 break

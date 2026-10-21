@@ -14,6 +14,15 @@ from pathlib import Path
 # === 项目根目录 ===
 PROJECT_ROOT = Path(__file__).resolve().parent
 
+# === 客户端版本号（V1.0.5 新增：用于服务端版本识别与低版本锁死）===
+# 每次发版必须同步更新此字段；服务器据此判断用户是否使用最新版
+VERSION = "1.0.5"
+
+# === 离线模式开关（V1.0.5 修复：离线模式下跳过所有联网调用）===
+# 设置环境变量 MC_SKILL_OFFLINE=1 启用离线模式
+# 离线模式下：Modrinth API 请求、版本检查、自动修复下载均跳过
+OFFLINE_MODE = os.environ.get("MC_SKILL_OFFLINE", "0") == "1"
+
 # === 数据目录 ===
 DATA_DIR = PROJECT_ROOT / "data"
 

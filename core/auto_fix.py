@@ -19,6 +19,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.error import URLError
 from urllib.request import Request, urlopen
+import ssl
+
+# V1.0.5 修复：显式 SSL 上下文，避免依赖 Python 默认行为
+_SSL_CONTEXT = ssl.create_default_context()
 
 from core.i18n import t
 
@@ -60,12 +64,18 @@ def _download_file(url: str, dest_path: Path, timeout: int = 30) -> bool:
     Returns:
         是否成功
     """
+    # V1.0.5 修复：离线模式下跳过下载
+    from config import OFFLINE_MODE
+    if OFFLINE_MODE:
+        logger.info(f"[离线模式] 跳过下载: {url}")
+        return False
+
     try:
         req = Request(url, headers={
             "User-Agent": "MC-Skill-AutoFix/1.0",
             "Accept": "*/*",
         })
-        with urlopen(req, timeout=timeout) as resp:
+        with urlopen(req, timeout=timeout, context=_SSL_CONTEXT) as resp:
             dest_path.parent.mkdir(parents=True, exist_ok=True)
             with open(dest_path, "wb") as f:
                 shutil.copyfileobj(resp, f)

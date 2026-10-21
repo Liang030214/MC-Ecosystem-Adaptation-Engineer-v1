@@ -142,6 +142,27 @@ def dispatch_feature(feature: str, args: argparse.Namespace) -> int:
             record_usage(feature)
         except Exception:
             pass
+        # V1.0.5: 保存项目记忆（版本升级时可恢复未完成工作）
+        try:
+            from core.project_memory import save_project_memory
+            _result_files = result.get("output_files", {}) if isinstance(result, dict) else {}
+            _file_list = list(_result_files.values()) if isinstance(_result_files, dict) else []
+            save_project_memory(
+                feature=feature,
+                args=vars(args),
+                result_files=_file_list,
+            )
+        except Exception:
+            pass  # 记忆保存失败不影响主流程
+        # V1.0.5: 上报功能调用活动事件（成功/失败均上报，便于管理员监控使用情况）
+        try:
+            from core.auth_manager import report_feature_called, report_error_occurred
+            if result.get("status") == "error":
+                report_error_occurred(feature, str(result.get("errors", [""])))
+            else:
+                report_feature_called(feature, extra={"status": result.get("status", "unknown")})
+        except Exception:
+            pass  # 活动上报失败不影响主流程
         return 0 if result.get("status") != "error" else 1
     except ImportError as e:
         logger.error(f"Module import failed: {feat_info['module']} - {e}")
@@ -150,6 +171,12 @@ def dispatch_feature(feature: str, args: argparse.Namespace) -> int:
     except Exception as e:
         logger.exception(f"Feature execution error: {feature}")
         print(f"\n❌ {t('error.feature_execution_failed')}: {e}", flush=True)
+        # V1.0.5: 上报未捕获异常
+        try:
+            from core.auth_manager import report_error_occurred
+            report_error_occurred(feature, str(e))
+        except Exception:
+            pass
         generate_unified_output(
             feature=feature,
             status="error",
@@ -441,6 +468,17 @@ def build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help=t("help.patch_only"),
     )
+    # V1.0.5: 三模式翻译 + AI Agent 应用响应
+    parser.add_argument(
+        "--mode",
+        choices=["offline", "online", "hybrid", "apply-response"],
+        default="hybrid",
+        help="翻译模式：offline=仅词典+翻译库; online=仅AI Agent; hybrid=词典+翻译库优先，未命中发prompt（默认）; apply-response=应用 AI 翻译响应",
+    )
+    parser.add_argument(
+        "--response-file",
+        help="apply-response 模式下 AI Agent 翻译响应的 JSON 文件路径",
+    )
 
     parser.add_argument(
         "--crash-log",
@@ -555,6 +593,99 @@ def print_banner():
     print(banner)
 
 
+def _maybe_print_onboarding_cli() -> None:
+    """CLI 模式首对话引导（仅首次，后续不再显示）
+
+    判断条件：auth_manager.is_onboarding_due()
+    内容：基于 get_onboarding_info() 动态数据，按 3 段顺序打印
+    最后调用 mark_onboarding_shown() 持久化标记，防止重复打扰
+    """
+    try:
+        from core.auth_manager import get_onboarding_info, mark_onboarding_shown, is_onboarding_due
+        if not is_onboarding_due():
+            return  # 已经引导过，跳过
+
+        info = get_onboarding_info()
+        fp = info["free_period"]
+        du = info["daily_usage"]
+
+        # 段1：功能速览
+        print()
+        print(f"✨ {t('onboarding.section_features')}")
+        print("─" * 52)
+        for f in info["public_features"]:
+            print(f"  {f['code']}  {f['name']}  —  {f['desc']}")
+        print(f"  {t('onboarding.section_features_hint')}")
+
+        # 段2：免费额度
+        print()
+        print(f"🎁 {t('onboarding.section_free')}")
+        print("─" * 52)
+        if fp["in_free_period"]:
+            print(f"  {t('onboarding.free_trial_active').format(days=fp['days_remaining'], total=fp['days_total'], end_date=fp['free_period_end'])}")
+        else:
+            print(f"  {t('onboarding.free_trial_expired')}")
+        print(f"  · {t('onboarding.daily_usage_auto').format(used=du['auto_used'], limit=du['auto_limit'])}")
+        print(f"  · {t('onboarding.daily_usage_semi').format(used=du['semi_used'], limit=du['semi_limit'])}")
+        print(f"  · {t('onboarding.daily_usage_migration').format(used=du['migration_used'], limit=du['migration_limit'])}")
+        for note in fp["notes"]:
+            print(f"  · {note}")
+
+        # 段3：付费套餐 + 收尾
+        print()
+        print(f"💎 {t('onboarding.section_plans')}")
+        print("─" * 52)
+        print(f"  {t('onboarding.plans_available')}")
+        print(f"  支持渠道：{' / '.join(info['payment_channels'])}")
+
+        print()
+        print(f"👋 {t('onboarding.section_end')}")
+        print(f"  {t('onboarding.prompt_user')}")
+        print()
+
+        # 标记已显示
+        mark_onboarding_shown()
+
+    except Exception:
+        # onboarding 失败绝对不能影响主流程
+        pass
+
+
+def _check_license_integrity() -> None:
+    """启动时校验 SKILL.md 许可证章节是否被篡改/删除。
+    若许可证章节缺失或被篡改，拒绝运行并退出。
+    """
+    skill_md = _PROJECT_ROOT / "SKILL.md"
+    if not skill_md.exists():
+        print("\n[FATAL] SKILL.md 缺失，许可证完整性校验失败，拒绝运行。")
+        sys.exit(1)
+    try:
+        content = skill_md.read_text(encoding="utf-8")
+    except Exception as e:
+        print(f"\n[FATAL] 读取 SKILL.md 失败: {e}，许可证完整性校验失败，拒绝运行。")
+        sys.exit(1)
+
+    # 必须同时存在的关键标记（防篡改）
+    required_markers = [
+        "MC-Skill Restrictive License",
+        "not authorized to modify",
+        "Public distribution of modified versions",
+    ]
+    missing = [m for m in required_markers if m not in content]
+    if missing:
+        print("\n" + "=" * 60)
+        print("[FATAL] 许可证完整性校验失败")
+        print("=" * 60)
+        print("检测到 SKILL.md 中的许可证章节被删除或篡改。")
+        print("缺失标记:")
+        for m in missing:
+            print(f"  - {m}")
+        print("\n本 Skill 采用 MC-Skill Restrictive License v1.0，")
+        print("禁止删除或篡改许可证章节。请从官方渠道重新获取。")
+        print("=" * 60)
+        sys.exit(1)
+
+
 def main(argv: Optional[list] = None) -> int:
     """Main entry point
 
@@ -565,6 +696,21 @@ def main(argv: Optional[list] = None) -> int:
         Exit code 0=success 1=failure
     """
     print_banner()
+
+    # === 许可证完整性校验（防篡改）===
+    _check_license_integrity()
+
+    # === 核心文件哈希校验（防篡改，硬拦截）===
+    try:
+        from core.integrity_guard import enforce_integrity
+        enforce_integrity()
+    except SystemExit:
+        raise
+    except Exception as _ig_err:
+        logger.warning(f"[integrity] enforce_integrity 调用异常: {_ig_err}")
+
+    # === 首对话引导（仅首次）===
+    _maybe_print_onboarding_cli()
 
     # === 版本升级/紧急通知检查（下版本#3-3 双通道提醒）===
     try:
@@ -587,6 +733,26 @@ def main(argv: Optional[list] = None) -> int:
         _vc_log.getLogger(__name__).info("[版本检查] 非关键模块异常，已跳过: {}".format(_vc_err))
 
     config.ensure_output_dirs()
+
+    # V1.0.5: 版本升级检测 —— 若检测到版本升级，自动备份用户数据并加载项目记忆
+    try:
+        from core.version_migration import check_version_upgrade
+        _mig_result = check_version_upgrade()
+        if _mig_result.get("upgraded") and _mig_result.get("has_pending_work"):
+            # 有未完成的工作，在控制台显示恢复提示
+            print(f"\n📋 [版本升级] {_mig_result.get('message', '')}", flush=True)
+            if _mig_result.get("backup_path"):
+                print(f"📦 用户数据已备份到：{_mig_result['backup_path']}", flush=True)
+    except Exception as _mig_err:
+        # 版本迁移失败不影响主流程
+        print(f"[版本迁移] 非关键模块异常，已跳过: {_mig_err}", flush=True)
+
+    # V1.0.5: 上报应用启动事件（异步、失败不影响主流程）
+    try:
+        from core.auth_manager import report_app_started
+        report_app_started()
+    except Exception:
+        pass
 
     parser = build_arg_parser()
     args = parser.parse_args(argv)
@@ -745,7 +911,7 @@ def run_local_api_server(port: int = 8765) -> int:
                 self._json_response({
                     "status": "ok",
                     "service": "mc-skill-local-api",
-                    "version": "v1.0.4",
+                    "version": "v1.0.5",
                     "port": port,
                 })
                 return
@@ -1014,7 +1180,7 @@ def run_local_api_server(port: int = 8765) -> int:
             </div>
         </div>
         <div class="footer">
-            MC Skill v1.0.1 · 本地API服务 · 端口 {port}
+            MC Skill v1.0.5 · 本地API服务 · 端口 {port}
         </div>
     </div>
 </body>

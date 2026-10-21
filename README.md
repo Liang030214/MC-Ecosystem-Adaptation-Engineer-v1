@@ -1,581 +1,373 @@
-# MC 全生态智能适配工程师 V1
+# MC Ecosystem Adaptation Engineer
 
-> MC Ecosystem Adaptation Engineer - 一站式 Minecraft 模组环境智能管理工具
+> One-stop Minecraft mod ecosystem intelligent management tool.
+
+---
+
+> ## 🚨 [URGENT NOTICE TO ALL EXISTING USERS]
 >
-> **V1.0.4 重大更新**：完整商业化运营体系——在线支付系统（支付宝/微信/PayPal）、管理员控制台、自动化运营报表、新增阿拉伯语RTL支持（12种语言）
+> **Dear V1.0.3 and earlier users:**
 >
-> **V1.0.2 增强**：API缓存优化、离线模式增强、报告渲染性能提升、安全合规修复
+> Thank you for downloading and using this Skill! To provide you with a more stable experience and richer features, **please make sure to update to the latest version V1.0.4**.
 >
-> **V1.0.1 增强**：批量搜索、分类搜索（16+类别）、同类推荐、动态分类、自动更新兼容库
+> ### ✅ What's New in V1.0.4 (Exclusive Perks for Existing Users)
+>
+> 1. **🧵 Quilt Loader Deep Support**: F1 JAR Parser now parses quilt.mod.json metadata; F9 Migration Assessment supports Quilt loader migration paths
+> 2. **🌍 New MC Version Support**: F3 Environment Setup adds MC 1.21.2+/1.21.3+/1.21.4+ support; F9 compatibility matrix expanded from 4 to 16 version pairs
+> 3. **💻 Cross-Platform Path Detection**: F3 now detects .minecraft paths on Windows, macOS, and Linux automatically
+> 4. **🤖 AI Agent Online Translation**: F7 adds three-mode translation (offline/online/hybrid) with AI translation results auto-saved to offline DB (learning mechanism)
+> 5. **📊 Real-time Activity Reporting**: F10 reports key client events to server in real-time (app_started/feature_called/error_occurred/payment_page_opened)
+> 6. **🛡️ Payment Panel Behavior Monitoring**: Admin console payment panel adds behavior time column + 5 suspicious behavior badges
+>
+> ### 🎁 Exclusive Perks for Upgrading Users
+>
+> - **Free Period Fully Preserved**: Your 7-day free period starts from your first use of the original version and is **100% preserved** after upgrading — no reset
+> - **Quilt Mod Support**: Upgrade to parse and assess Quilt loader mods directly
+> - **AI Translation Learning**: Translation results improve over time as the AI learning mechanism builds the offline database
+>
+> ### ⚠️ Why You Should Upgrade Today
+>
+> V1.0.3 and earlier versions **lack Quilt loader deep parsing** and **AI Agent online translation**. Upgrading to V1.0.4 gives you full Quilt mod ecosystem support and intelligent translation learning.
+>
+> **Click the "Update" button below to upgrade now! If you have any questions, reach the developer via the contact methods on the Skill's payment guide page (email / QQ / Afdian).**
+>
+> — Liang Jingyu, Developer
+>
+> ---
+>
+> ## 🚨【中文紧急公告 · 请所有老用户必读】
+>
+> **尊敬的 V1.0.3 及更早版本老用户：**
+>
+> 感谢您下载使用本 Skill！为了给您提供更稳定的体验和更丰富的功能，**请您务必更新到最新版本 V1.0.4**。
+>
+> ### ✅ V1.0.4 新版本重要更新（老用户专属福利）
+>
+> 1. **🧵 Quilt 加载器深度支持**：F1 JAR 解析新增 quilt.mod.json 元数据解析；F9 移植评估支持 Quilt 加载器迁移路径
+> 2. **🌍 MC 新版本适配**：F3 环境搭建新增 MC 1.21.2+/1.21.3+/1.21.4+ 版本支持；F9 兼容矩阵从 4 条扩展至 16 条版本组合
+> 3. **💻 跨平台路径检测**：F3 新增 Windows/macOS/Linux 三平台 .minecraft 路径自动检测
+> 4. **🤖 AI Agent 在线翻译**：F7 新增三模式翻译（offline/online/hybrid），AI 翻译结果自动写入离线翻译库（学习机制）
+> 5. **📊 活动事件实时上报**：F10 新增客户端关键事件实时上报服务端（app_started/feature_called/error_occurred/payment_page_opened）
+> 6. **🛡️ 支付面板行为监控**：管理员控制台支付面板新增行为时间列 + 5 种可疑行为徽章
+>
+> ### 🎁 老用户升级专属福利
+>
+> - **免费期完整保留**：7 天免费期从首次使用原版本那天起算，升级后 100% 保留，不重置
+> - **Quilt 模组支持**：升级后可直接解析和评估 Quilt 加载器模组
+> - **AI 翻译学习机制**：翻译结果随使用不断优化，AI 学习机制持续构建离线翻译库
+>
+> ### ⚠️ 为什么强烈建议升级？
+>
+> V1.0.3 及更早版本**不支持 Quilt 加载器深度解析**和 **AI Agent 在线翻译**，升级到 V1.0.4 后可享受完整的 Quilt 模组生态支持和智能翻译学习机制。
+>
+> **立即点击「更新」按钮升级！如有问题，请通过付费引导页的联系方式（邮箱/QQ/爱发电）联系作者。**
+>
+> —— 开发者 梁靖羽 敬上
 
 ---
 
-## 📖 项目简介
+## Overview
 
-本工具是一个面向 Minecraft 模组玩家的智能辅助系统，核心能力包括：模组环境诊断、版本推荐、报错修复和自动修复。支持主流模组加载器（NeoForge、Forge、Fabric、Quilt），覆盖机械动力、乐事、工业时代、应用能源等热门模组生态。
-
-**15 个核心功能**（V1.0.4 状态）：版本智能推荐（F1）、模组依赖解析（F2）、崩溃日志分析（F3）、完整迁移报告（F4）、依赖缺口补丁（F5）、版本分步指引（F6）、多语言翻译（F7）、配置智能修复（F8）、Forge/Fabric 双向移植（F9）、Mod 打包输出（F10）、付费引导系统（F11）、在线支付系统（F12）、管理员控制台（F13）、自动化运营报表（F14）、测试模式（F15）。
-
-支持 **12 种语言**（含通用阿拉伯语 ar_sa MSA）。
+MC Ecosystem Adaptation Engineer is an AI-powered assistant tool for Minecraft mod players and modpack authors. It covers 15 core capabilities including mod search, environment setup, Mixin conflict scanning, crash analysis, multi-language translation, migration feasibility assessment, online payment system, admin dashboard, and automated business reports. Supports Forge, NeoForge, Fabric, and Quilt loaders (V1.0.4: Quilt deep support) across MC versions 1.16.5 to 1.21.4+. 12-language auto-detection with Arabic RTL support. AI Agent online translation with learning mechanism. Cross-platform path detection (Windows/macOS/Linux). Real-time activity event reporting.
 
 ---
 
-### 📝 版本新增/优化记录
+### 📝 Version Additions / Optimizations by Release (GitHub release numbering, against actual GitHub_V1.0.3 README)
 
-**V1.0.4 新增/优化：**
-- 🏗️ **商业化运营体系**：新增 F12 在线支付系统（支付宝/微信/PayPal三渠道，月卡/季卡/年卡）、F13 管理员控制台（Web管理后台）、F14 自动化运营报表（沉睡用户/到期提醒/月度报表）
-- 📣 **通用阿拉伯语支持**：新增 ar_sa（通用标准阿拉伯语MSA），语言总数 11→12，覆盖沙特/阿联酋/埃及/中亚斯坦国等所有阿拉伯语使用者，支持RTL从右向左书写
-- 🌐 **简介同步升级**：核心功能从 11 项扩展至 15 项，语言从 11 种扩展为 12 种
+> **GitHub V1.0.3 README actual overview**: Already covers 15 core capabilities, 12 languages with Arabic RTL, commercial modules. No mention of Quilt deep support, AI Agent online translation, cross-platform path detection, or activity event reporting.
 
-**V1.0.3 新增/优化：**
-- 💰 **渐进式付费引导**：新增三级付费引导机制（友好提醒→方案展示→支持打赏），非强制，每日仍有免费额度
-- 📦 **数据扩充**：模组数据库扩充至65+模组，崩溃模式库更新，Java版本映射补全
+**GitHub V1.0.4 added/optimized (upcoming release, from GitHub V1.0.3 → V1.0.4):**
+- 🧵 **Quilt deep support added to overview** — V1.0.3 only listed "Quilt" as a supported loader; V1.0.4 adds "Quilt deep support" (quilt.mod.json metadata parsing)
+- 🌍 **MC version coverage expanded** — V1.0.3 said "1.21.x"; V1.0.4 updates to "1.21.4+" with explicit new version support
+- 💻 **Cross-platform path detection** — V1.0.3 had no cross-platform mention; V1.0.4 adds Windows/macOS/Linux path auto-detection
+- 🤖 **AI Agent online translation** — V1.0.3 had no AI translation; V1.0.4 adds three-mode translation + learning mechanism
+- 📊 **Real-time activity reporting** — V1.0.3 had no event reporting; V1.0.4 adds client activity event real-time reporting
 
-**V1.0.2 新增/优化：**
-- 🛡️ **安全合规**：移除付费相关敏感内容（二维码、定价表），改为占位页面；SKILL.json F11 声明改为禁用
-- ⚡ **性能优化**：API缓存系统重构（TTL+磁盘双级），离线数据库模块（50+模组索引），报告生成器模板预编译
-- 🌐 **翻译完善**：11种语言翻译条目全部对齐（368个键）
-
-**V1.0.1 新增/优化：**
-- 📦 **批量搜索模式**：一次性搜索多个关键词，效率翻倍
-- 🗂️ **分类搜索**：16+ 预定义模组分类（机械动力、乐事、科技、魔法等）
-- 🔍 **同类推荐**：智能发现相关模组
-- 🌐 **动态分类**：从 Modrinth API 获取全球模组分类
-- 🔄 **自动更新**：每次搜索自动同步版本数据
-- 🆕 **四大核心功能**：多语言翻译系统（F7）、配置智能修复（F8）、Forge/Fabric双向移植（F9）、Mod打包输出（F10）
-- 🌐 **11种语言支持**：中英日韩俄西意泰希印，共11种语言互译
+**GitHub V1.0.3 (current online release — what users actually see in the README today):**
+- Overview covers 15 capabilities, 12 languages, commercial stack
 
 ---
 
-## ⚠️ 免费与付费说明
+## Key Features
 
-### 免费期（首次使用起 60 天）
-
-从您首次使用本 Skill 当天算起 **60 天内**，所有功能**完全免费、不限次数**（模组移植可行性评估除外，首次免费后每天 1 次）。
-
-### 付费体系（V1.0.4 已上线）
-
-- **免费用户**：每日免费额度（20次全自动 + 8次半自动），满足轻度使用需求
-- **普通会员**：解锁更高次数限制（100次全自动 + 50次半自动）
-- **高级会员**：后续开放，敬请期待
-
-**支付渠道**：支持支付宝、微信支付、PayPal 三渠道
-**订阅套餐**：月卡 $9.99 / ¥8.88、季卡 $24.99 / ¥23.88、年卡 $69.99 / ¥68.88
-
-> **说明**：免费额度每日重置，无需付费也能长期使用基础功能。付费只是为了解锁更高次数限制和进阶服务。
+| # | Feature | Description |
+|---|---------|-------------|
+| F1 | JAR Structure Parser | Parse mod JAR metadata (mcmod.info, fabric.mod.json, mods.toml, quilt.mod.json) and generate Chinese feature documentation (V1.0.4: Quilt deep support) |
+| F2 | Mod Search & Download | Modrinth API integration with version/loader/category filtering, batch search, category search, related recommendations, dynamic categories, and auto-update |
+| F3 | Environment Setup Guide | Intelligently recommend MC version and loader combinations, auto-detect Java version and launcher paths; cross-platform path detection (Windows/macOS/Linux); MC 1.21.2+/1.21.3+/1.21.4+ support (V1.0.4) |
+| F4 | Mixin Conflict Scanner | Detect Mixin injection conflicts between multiple mods and identify compatibility risks |
+| F5 | Resource Repacker + Mod Packaging Output | Repack and optimize mod resource files (textures, sounds, language files in batch), plus resource-level migration bundles and distributable mod package generation |
+| F6 | Save Sync | Backup and restore game saves with multi-device sync support |
+| F7 | Multi-language Translation | Three-mode translation (offline dictionary+DB / online AI Agent / hybrid DB-first AI fallback with learning), 12 supported languages (ZH/EN/JA/KO/RU/ES/IT/EL/TH/HI/AR with RTL) (V1.0.4: AI online translation + learning) |
+| F8 | Crash Fix | Intelligently analyze crash logs, identify 25+ error patterns, and provide fix suggestions |
+| F8.1 | Auto Fix | One-click mod version upgrade, automatic backup and replacement with fix report generation |
+| F9 | Migration Feasibility Assessment | Cross-version/cross-loader migration feasibility report with API/dependency/Mixin analysis; Quilt loader support; 16 version compatibility matrix (V1.0.4) |
 
 ---
 
-### 📝 版本新增/优化记录
+### 📝 Version Additions / Optimizations by Release (GitHub release numbering, against actual GitHub_V1.0.3 README feature table)
 
-**V1.0.4 新增/优化：**
-- ✅ **商业化正式上线**：从"渐进式付费引导"升级为完整在线支付系统，支付宝/微信/PayPal三渠道可用
-- 💬 **套餐标注**：新增月卡/季卡/年卡具体定价（中英文显示人民币/美元）
-- 📊 **权益层级**：明确免费用户 28 次/日 vs 普通会员 150 次/日 vs 高级会员敬请期待
-- 🔒 **免费期保护**：60 天免费期（F9 首次免费后 1 次/日）规则写死，避免误改
+> **GitHub V1.0.3 README actual feature table**: Already includes F1–F9 + F8.1 + F10/F11/F12/F13/F14 (15 rows). F7 lists "12 supported languages with RTL". F1 lists only 3 metadata formats (no quilt.mod.json). F3 has no cross-platform mention. F9 has only 4 version pairs.
 
-**V1.0.3 新增/优化：**
-- 📣 **三级渐进式引导**：友好提醒→订阅方案展示→支持与打赏展示，完全非强制
-- 🎯 **限额提示**：每日免费额度为 20 次自动 + 8 次半自动
-- 🌐 **11 种语言同步**：付费相关文案已翻译为 11 种语言
-
-**V1.0.2 新增/优化：**
-- 🛡️ **合规调整**：移除二维码、定价表等敏感内容，改为"敬请期待"占位
-- ❌ **F11 标记禁用**：SKILL.json 中 F11 声明改为禁用状态
-- 🌐 **翻译同步**：11 种语言翻译条目同步调整为占位描述
+**GitHub V1.0.4 added/optimized (Key Features module, true delta vs. V1.0.3 package):**
+- ⬆️ **F1 JAR Structure Parser** — V1.0.3 listed 3 metadata formats; V1.0.4 adds quilt.mod.json parsing (Quilt loader deep support)
+- ⬆️ **F3 Environment Setup Guide** — V1.0.3 had Windows-only paths; V1.0.4 adds cross-platform path detection (Windows/macOS/Linux) + MC 1.21.2+/1.21.3+/1.21.4+ support
+- ⬆️ **F7 Multi-language Translation** — V1.0.3 had dictionary-only translation; V1.0.4 adds three-mode translation (offline/online/hybrid) + AI Agent online translation + learning mechanism
+- ⬆️ **F9 Migration Feasibility Assessment** — V1.0.3 had 4 version pairs; V1.0.4 expands to 16 pairs + Quilt loader support
+- 🆕 **F10 Real-time Activity Reporting** — V1.0.3 had no event reporting; V1.0.4 adds app_started/feature_called/error_occurred/payment_page_opened real-time reporting
 
 ---
 
-## ✨ 功能特性
+### 📝 Version Additions / Optimizations by Release (GitHub release numbering, against actual GitHub_V1.0.2 README feature table)
 
-| 功能 | 命令参数 | 说明 |
-|------|----------|------|
-| **F1 JAR解析** | `--feature jar_parser` | 解析模组JAR文件结构、生成中文功能说明书 |
-| **F2 模组检索** | `--feature mod_searcher` | 从 Modrinth/CurseForge 搜索下载模组 |
-| **F3 环境搭建** | `--feature env_builder` | 自动检测 Java 版本、启动器路径、生成 JVM 参数 |
-| **F4 Mixin扫描** | `--feature mixin_scanner` | 分析模组间 Mixin 冲突风险 |
-| **F5 资源重打包** | `--feature repacker` | 资源级重打包（图片、音效等处理） |
-| **F6 存档同步** | `--feature save_sync` | 百度网盘存档多端同步 |
-| **F7 多语言翻译** | `--feature translator` | 提取模组语言文件、支持12种语言翻译（含阿拉伯语RTL） |
-| **F8 报错修复** | `--feature crash_analyzer` | 分析崩溃日志、智能推荐模组版本 |
-| **F8.1 自动修复** | `--feature auto_fix` | 一键下载升级模组版本、自动备份替换 |
-| **F9 移植评估** | `--feature migration_assess` | 模组移植可行性评估报告，分析API/依赖/Mixin兼容性 |
-| **F11 付费引导** | — | 三级渐进式付费引导（友好提醒→订阅方案→支持打赏） |
-| **F12 在线支付系统** | — | 支付宝/微信/PayPal三渠道支付，月卡/季卡/年卡套餐 |
-| **F13 管理员控制台** | — | Web管理后台，用户管理/订单追踪/权限控制/邮件配置 |
-| **F14 自动化运营报表** | — | 沉睡用户名单/套餐到期提醒/月度经营报表 |
+> **GitHub V1.0.2 README actual feature table**: only F1–F9 + F8.1 (10 rows). **F10/F11/F12/F13/F14 are all missing** from the feature table. F7 row explicitly states "10 supported languages (ZH/EN/JA/KO/RU/ES/IT/EL/TH/HI)" (not 11).
+
+**GitHub V1.0.3 added/optimized (Key Features module, true delta vs. V1.0.2 package):**
+- 🆕 **F10 Authorization & Usage Management (first public feature-table listing)** — GitHub V1.0.2 README feature table had no F10 row (although an internal declaration existed in SKILL.json); V1.0.3 publicly lists it for the first time: machine ID generation, 7-day free period, daily usage counting, membership tiers, license activation, with F13 server-side auth linkage
+- 🆕 **F11 Payment Guide (3-level)** — GitHub V1.0.2 feature table had no F11 row; V1.0.3 adds friendly reminder → subscription plans → support & appreciation (non-mandatory, daily free quota preserved)
+- 🆕 **F12 Online Payment System** — GitHub V1.0.2 had no payment module at all; V1.0.3 adds Alipay/WeChat/PayPal with 3 subscription tiers (monthly/quarterly/yearly) and mandatory "I paid" verification button
+- 🆕 **F13 Admin Dashboard** — GitHub V1.0.2 had zero admin console; V1.0.3 adds Web-based console with random admin key, 1h token, user/order/permission/email/notification management
+- 🆕 **F14 Automated Business Reports** — GitHub V1.0.2 had no reporting system; V1.0.3 adds inactive-user lists, expiry reminders (configurable weekday), monthly summary, and a manual test-email trigger
+- ⬆️ **F7 Multi-language Translation (10 → 12 languages)** — GitHub V1.0.2 explicitly listed only 10 languages (no Arabic); V1.0.3 adds ar_sa MSA, Arabic MC terms dictionary (Tool→أداة, Armor→درع, etc.), multi-language dictionary lookup engine, and RTL layout on payment pages
+- ⬆️ **F2 Mod Search description expanded** — GitHub V1.0.2 only said "version and loader filtering"; V1.0.3 now aligns with actual shipped capability: batch search, category search, related recommendations, dynamic categories, auto-update
+- 📦 **Dataset expansion note** — mod recommendation index 50+ → 65+; Java version mapping table expanded comprehensively
 
 ---
 
-### 📝 版本新增/优化记录
+## Technical Highlights
 
-**V1.0.4 新增/优化（F7优化 + F11优化 + F12/F13/F14新增）：**
-- 🆕 **F12 在线支付系统**：三渠道支付（支付宝/微信/PayPal）、三档套餐（月卡/季卡/年卡）、付款后必须点击"已付款"验证按钮
-- 🆕 **F13 管理员控制台**：Web管理后台、随机管理员密钥、1小时Token时效、用户/订单/权限/邮件/通知统一管理
-- 🆕 **F14 自动化运营报表**：沉睡用户名单（月+周）、套餐到期提醒（每周可配置检查日）、月度经营报表、手动触发测试邮件
-- ⬆️ **F7 多语言翻译**：11→12种语言互译（新增通用阿拉伯语ar_sa）；新增阿拉伯语MC术语词典（Tool→أداة、Armor→درع等）；translator.py支持多语言词典查找
-- ⬆️ **F11 付费引导页面**：新增阿拉伯语翻译+RTL从右向左书写；语言切换改为下拉菜单（12种）；新增强制付款提示（必须点击"已付款"按钮+24h禁止重复支付）；货币自动转换（中文¥/其他$）；payment_i18n.py独立模块化
-
-**V1.0.3 新增/优化：**
-- 🆕 **F11 付费引导**：三级渐进式付费引导（友好提醒→订阅方案→支持打赏）；非强制付费，每日仍有免费额度；11种语言翻译同步
-
-**V1.0.2 新增/优化（性能+合规）：**
-- 🚀 **API缓存优化**：带 TTL 的智能缓存（内存+磁盘双级），避免重复 API 请求
-- 📦 **离线模式增强**：新增本地模组索引数据库（50+模组），支持离线模糊搜索和版本查询
-- ⚡ **报告渲染优化**：CSS/JS 静态缓存、模板预编译、批量生成支持
-- 🔒 **安全合规**：移除付费相关敏感内容（二维码、定价表），改为占位页面；F11 声明标记禁用
-- 🌐 **翻译完善**：11 种语言翻译条目全部对齐（368 个键）
-
-**V1.0.1 新增/优化：**
-- 🆕 **F7 多语言翻译**：提取模组语言文件、支持11种语言翻译（中英日韩俄西意泰希印）
-- 🆕 **F8 报错修复 + F8.1 自动修复**：崩溃日志分析+智能推荐版本；一键下载/备份/替换
-- 🆕 **F9 移植评估**：Forge/Fabric双向移植可行性评估报告（API/依赖/Mixin/可行性评分）
-- 🆕 **F10 Mod打包输出**：资源级重打包+迁移包生成
-- 📦 **F2 模组检索增强**：批量搜索、分类搜索（16+类别）、同类推荐、动态分类、自动更新
+- **All-Loader Support**: Native support for Forge, NeoForge, Fabric, and Quilt
+- **12 Languages**: Built-in language packs for Chinese, English, Japanese, Korean, Russian, Spanish, Italian, Greek, Thai, Hindi, and Arabic (with RTL support)
+- **25+ Crash Patterns**: Comprehensive crash pattern database covering OOM, shader conflicts, Mixin conflicts, class loading failures, and more
+- **Modrinth API Integration**: Real-time mod version queries via Modrinth API
+- **Smart Caching**: Avoid redundant API calls for improved response speed
+- **Safety Backups**: Forced backup before auto-fix operations with one-click rollback support
+- **Mixin Injection Analysis**: Deep scan of Mixin injection points with target class compatibility assessment
+- **Cross-Platform**: Windows, macOS, and Linux support
+- **Commercialization Ready**: Integrated payment system (Alipay/WeChat/PayPal), admin dashboard, and automated business reports
 
 ---
 
-## 🔄 版本更新日志
+### 📝 Version Additions / Optimizations by Release (GitHub release numbering, against actual GitHub_V1.0.2 README Technical Highlights)
 
-（该模块本身即为按时间顺序的版本记录，见下方 V1.0.0–V1.0.4 完整记录）
+> **GitHub V1.0.2 README actual Technical Highlights (8 bullets, exact):** All-Loader Support, **10 Languages**, 25+ Crash Patterns, Modrinth API Integration, **Smart Caching**, Safety Backups, Mixin Injection Analysis, Cross-Platform.
+> **Note**: "Offline Mode" and "Commercialization Ready" are **NOT present in the actual V1.0.2 README highlights** at all. Smart Caching, however, already exists in V1.0.2.
 
----
-
-### V1.0.4 (2026-08-25) — 重大版本：商业化运营体系 + 阿拉伯语支持
-
-**核心任务：从零构建完整商业化运营体系 + 新增阿拉伯语 + F7/F11功能优化**
-
-#### ⬆️ 功能优化（2项）
-
-| 功能 | V1.0.3状态 | V1.0.4优化内容 |
-|------|-----------|----------------|
-| **F7 多语言翻译** | 11种语言互译 | ① 新增通用阿拉伯语(ar_sa)，升级为12种语言互译 ② 新增阿拉伯语MC术语词典（Tool→أداة、Armor→درع、Enchantment→تعويذة等） ③ translator.py支持多语言词典查找，翻译引擎升级 |
-| **F11 付费引导页面** | 11种语言 | ① 新增阿拉伯语翻译+RTL从右向左书写方向 ② 语言切换改为下拉菜单（12种语言） ③ 新增两条强制付款提示（必须点击"✅我已付款"按钮+24h内禁止重复支付） ④ 货币自动转换（中文¥/其他语言$） ⑤ payment_i18n.py独立模块化 |
-
-#### 🆕 新增系统模块（3项）
-
-| 模块 | 说明 |
-|------|------|
-| **F12 在线支付系统** | 支付宝（小微商户API）、微信支付（小微商户API）、PayPal（个人卖家账户）三渠道支付 |
-| **F13 管理员控制台** | Web管理后台，用户管理、订单追踪、权限控制、邮件配置、通知设置 |
-| **F14 自动化运营报表** | 沉睡用户名单、套餐到期提醒（每周）、月度经营报表 |
-
-#### ✨ 新增功能详情
-
-1. **三种支付渠道** — 支付宝/微信/PayPal各3张独立收款二维码，三档套餐（月卡/季卡/年卡）
-2. **管理员控制台** — 随机密钥生成、1小时Token时效、内存存储、用户/订单/权限管理
-3. **定时运营报表** — 沉睡用户名单（月+周）、套餐到期提醒（每周可配置检查日）、月度经营报表
-4. **通知聚合模式** — 用户完成付款后发送单封汇总邮件（含完整流程日志）
-5. **阿拉伯语（ar_sa）支持** — 通用标准阿拉伯语（MSA），覆盖沙特/阿联酋/埃及/中亚斯坦国等所有阿拉伯语使用者
-6. **RTL从右向左书写** — 支付页面切换阿拉伯语时自动设置文本方向为RTL
-7. **模组翻译阿拉伯语词典** — MC术语阿拉伯语翻译（Tool→أداة、Armor→درع等）
-
-#### 🐛 Bug 修复
-
-- 管理控制台版本号显示异常
-- 前端硬编码管理员密钥问题
-- 服务器启动模块导入路径错误
-- remind_log.json 格式兼容问题
-- 阿拉伯语翻译双引号嵌套导致JS语法错误
+**GitHub V1.0.3 added/optimized (Technical Highlights module, true delta vs. V1.0.2 package):**
+- 🇸🇦 **10 Languages → 12 Languages with explicit Arabic RTL note** — GitHub V1.0.2 only wrote "Built-in language packs for [10 languages]"; V1.0.3 updates to "12 Languages...and Arabic (with RTL support)"
+- 🪙 **"Commercialization Ready" — brand new 9th highlight bullet** — GitHub V1.0.2 had zero commercial highlights; V1.0.3 adds the 9th bullet covering full Alipay/WeChat/PayPal + admin dashboard + automated reports stack
+- 🛡️ **Commercial security posture implicitly covered** — random admin key, 1h in-memory token, server-side F10+F13 auth checks are all now implied by the new Commercialization Ready bullet
+- 📚 **Crash pattern content expanded** — GitHub V1.0.2 already listed the "25+ Crash Patterns" bullet count; V1.0.3 expands the actual pattern entries and fix suggestions behind that number (not the headline count)
 
 ---
 
-### V1.0.3 (2026-08-12)
+## Pricing
 
-**核心任务：数据扩充 + 付费机制完善**
+### Free Period
 
-**付费机制完善**：
-- ✅ 实现三级渐进式付费引导系统
-  - 第一级：友好提醒（免费期结束/达到限额时自动推送）
-  - 第二级：订阅方案展示（月订/季订/年订，用户主动查看）
-  - 第三级：支持与打赏展示（微信/爱发电/QQ群/官网二维码）
-- ✅ 非强制付费（免费期结束后）：每日仍有免费额度（20次自动 + 8次半自动）
-- ✅ 尊重用户选择：只有确认查看才展示订阅详情
-- ✅ 多语言支持：11 种语言的付费相关翻译已同步
+All features are free for 7 days from first use (except migration assessment: 1/day after first free use).
 
-**数据扩充**（规划中）：
-- 🔄 模组版本推荐数据库扩充（新增 50+ 热门模组）
-- 🔄 崩溃模式库更新（补充更多错误模式）
-- 🔄 Java 版本映射补全
+### Subscription Plans (V1.0.4)
+
+- **Free**: 5 auto/day, 3 semi/day
+- **Normal Member**: 100 auto/day, 50 semi/day ($9.99/month, $24.99/quarter, $69.99/year)
+- **Premium**: Coming Soon
+
+Payment channels: Alipay, WeChat Pay, PayPal
 
 ---
 
-### V1.0.2 (2026-08-10)
+### 📝 Version Additions / Optimizations by Release (GitHub release numbering, against actual GitHub_V1.0.2 README Pricing)
 
-**主要目标修复**：
-- ✅ 移除付费页面中的二维码、定价表等敏感内容
-- ✅ 将付费页面改为"敬请期待"占位页面
-- ✅ 更新 SKILL.json 功能声明，F11 设为禁用状态
-- ✅ 同步更新 11 种语言的翻译条目
+> **GitHub V1.0.2 README actual Pricing (exact 3 lines)**:
+> "### Free Access — All features are currently free during the beta period. Premium subscription options will be available in the future. Stay tuned for updates."
+> — NO 7-day free-period rule, NO tiered quotas, NO pricing, NO payment channels, NO F11/F12 content of any kind.
 
-**次要目标优化**：
-- ✅ API 请求缓存系统重构：TTL 过期机制 + 磁盘持久化 + 命中统计
-- ✅ 新增离线数据库模块（offline_db.py）：50+ 热门模组索引 + 模糊匹配
-- ✅ 报告生成器性能优化：模板预编译 + 静态资源缓存 + 批量生成
-- ✅ 11 种语言翻译校对与补全，所有文件 368 键完全同步
-
----
-
-### V1.0.1 (2026-08-07) — 功能扩展版
-
-**新增功能**：
-- F7 多语言翻译系统（11种语言互译）
-- F8 配置文件智能修复
-- F9 Forge/Fabric 双向移植评估
-- F10 Mod 打包输出
-
-**优化功能**：
-- F2 模组检索：支持批量搜索、分类搜索（16+类别）
-- 新增同类推荐、动态分类（从 Modrinth API 拉取）
-- 每次搜索自动同步版本兼容数据
+**GitHub V1.0.3 added/optimized (Pricing module, true delta vs. V1.0.2 package):**
+- ✅ **Commercial features officially launched** — GitHub V1.0.2 had zero real pricing (only "coming soon" placeholder); V1.0.3 ships live Alipay/WeChat/PayPal 3-channel integration
+- 💬 **Explicit $ pricing tiers added** — $9.99/month, $24.99/quarter, $69.99/year for Normal Member (Free + Premium tiers documented)
+- 📊 **Tiered usage quotas documented** — Free 28/day (20 auto + 8 semi) vs Normal 150/day (100 auto + 50 semi) vs Premium Coming Soon
+- 🔒 **7-day free period rule codified** — migration assessment stays 1/day after first free use; all other features unlimited for 7 days from first use
+- 📣 **3-level progressive payment guide introduced** — friendly reminder at approaching limit → plan display → support & appreciation (non-mandatory flow)
+- 🎯 **Daily free quota numbers stated explicitly** — users now see concrete figures for the first time
+- 🌐 **10 → 12 languages payment copy** — all pricing and payment-guide UI copy translated into Arabic as well, with RTL layout and CNY/USD currency auto-switch
 
 ---
 
-### V1.0.0 (2026-08-06) — 首发版本
+## Installation
 
-**初始功能（F1-F6）**：
-- F1 JAR 解析与中文说明书生成
-- F2 模组检索与下载（Modrinth/CurseForge）
-- F3 环境搭建（Java检测+启动器路径+JVM参数）
-- F4 Mixin 冲突扫描
-- F5 资源重打包
-- F6 存档同步（百度网盘）
-- F8 报错修复（崩溃日志分析+版本推荐）
-- F8.1 自动修复（下载+备份+替换）
-- F9 移植评估（可行性报告+API/依赖/Mixin分析）
+### Prerequisites
 
----
+- Python 3.10+
+- Windows / macOS / Linux
+- Network connection (required for mod search and version queries)
 
-## 🚀 快速开始
-
-### 环境要求
-
-- **Python**: 3.10+
-- **操作系统**: Windows / macOS / Linux
-- **网络**: 首次使用需要联网（下载模组、查询版本）
-
-### 安装步骤
+### Quick Start
 
 ```bash
-# 1. 克隆或下载项目
+# 1. Clone or download the project
 cd mc-skill-v1
 
-# 2. 安装依赖
+# 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. 运行主程序
+# 3. Run interactively
 python main.py
+
+# Or use the startup script
+# Windows: mc-skill-start.bat
 ```
 
-### 使用示例
-
-#### 示例1: 分析崩溃日志 + 自动修复
+### Command Line Usage
 
 ```bash
-# 分析崩溃日志
+# Parse mod JAR structure
+python main.py --feature jar_parser --jar-path "create.jar"
+
+# Search and download mods
+python main.py --feature mod_searcher --query "Create" --mc-version "1.21.1" --loader "neoforge"
+
+# Analyze crash log
 python main.py --feature crash_analyzer --crash-log "crash-report.txt"
 
-# 一键自动修复（下载推荐版本并替换）
-python main.py --feature auto_fix \
-  --fix-mods-dir "C:\Users\xxx\AppData\Roaming\.minecraft\mods" \
-  --crash-log "crash-report.txt" \
-  --auto-confirm
-```
+# Auto-fix crash issues
+python main.py --feature auto_fix --crash-log "crash.txt" --fix-mods-dir "~/.minecraft/mods"
 
-#### 示例2: 搜索并下载模组
+# Assess migration feasibility
+python main.py --feature migration_assess --jar-path "mod.jar" --from-mc-version "1.20.1" --to-mc-version "1.21.1" --from-loader "forge" --to-loader "neoforge"
 
-```bash
-# 搜索机械动力
-python main.py --feature mod_searcher \
-  --query "Create" \
-  --mc-version "1.21.1" \
-  --loader "neoforge"
+# Translate mod language files (Arabic — V1.0.4)
+python main.py --feature translator --mods-dir "~/.minecraft/mods" --lang ar_sa
 
-# 下载指定模组
-python main.py --feature mod_searcher \
-  --mod-id "create" \
-  --mc-version "1.21.1" \
-  --loader "neoforge"
-```
-
-#### 示例3: 环境诊断
-
-```bash
-python main.py --feature env_builder \
-  --mc-version "1.21.1" \
-  --loader "neoforge" \
-  --device pc
-```
-
-#### 示例4: Mixin 冲突扫描
-
-```bash
-python main.py --feature mixin_scanner \
-  --mods-dir "C:\Users\xxx\.minecraft\mods" \
-  --loader neoforge
-```
-
-#### 示例5: 基础汉化（阿拉伯语翻译）
-
-```bash
-python main.py --feature translator \
-  --mods-dir "C:\Users\xxx\.minecraft\mods" \
-  --lang ar_sa
-```
-
-#### 示例6: 模组移植可行性评估
-
-```bash
-# 评估模组从 Forge 1.20.1 迁移到 NeoForge 1.21.1 的可行性
-python main.py --feature migration_assess \
-  --jar-path "C:\mods\create-1.20.1.jar" \
-  --from-mc-version "1.20.1" \
-  --to-mc-version "1.21.1" \
-  --from-loader "forge" \
-  --to-loader "neoforge"
-
-# 评估 Fabric 版本升级
-python main.py --feature migration_assess \
-  --jar-path "C:\mods\mod.jar" \
-  --from-mc-version "1.20.4" \
-  --to-mc-version "1.21.1" \
-  --from-loader "fabric" \
-  --to-loader "fabric"
-```
-
-#### 示例7: 存档同步
-
-```bash
-python main.py --feature save_sync \
-  --action sync \
-  --save-dir "C:\Users\xxx\.minecraft\saves" \
-  --netdisk-dir "/mc-saves"
+# Sync game saves
+python main.py --feature save_sync --action sync --save-dir "~/.minecraft/saves"
 ```
 
 ---
 
-## 📋 功能详解
+### 📝 Version Additions / Optimizations by Release (GitHub release numbering, against actual GitHub_V1.0.2 README Installation)
 
-### F9 模组移植可行性评估
+> **GitHub V1.0.2 README actual Installation (true facts)**:
+> - Already split into **Prerequisites / Quick Start / Command Line Usage** 3 sections (so NOT new in V1.0.3).
+> - Command Line Usage already had 7 examples: jar_parser, mod_searcher, crash_analyzer, **auto_fix**, **migration_assess**, **translator**, **save_sync** (included auto_fix/F9/save_sync samples).
+> - Translator example used `--lang zh_cn`; there was **no `--lang ar_sa`** anywhere.
 
-分析模组从一个环境（MC版本+加载器）移植到另一个环境的可行性，生成包含以下维度的完整评估报告：
-
-- **加载器迁移兼容性**：Forge→NeoForge、Forge→Fabric 等迁移路径的兼容性分析
-- **MC版本兼容性**：API稳定性、关键变更点、常见问题
-- **依赖兼容性**：自动检查所有依赖模组在目标环境下的支持情况
-- **Mixin注入分析**：扫描模组使用的所有Mixin注入点，评估目标类兼容性
-- **可行性评分**：0-100分，结合风险等级和预估工作量
-
-**使用场景**:
-- 计划将模组从 Forge 1.20.1 升级到 NeoForge 1.21.1
-- 评估跨加载器迁移的工作量
-- 检查依赖模组的版本兼容性
-- 了解迁移过程中的关键技术变更
+**GitHub V1.0.3 added/optimized (Installation module, true delta vs. V1.0.2 package):**
+- 🇸🇦 **Arabic translation CLI example added** — first ever `--lang ar_sa` sample invocation in the Command Line Usage section (GitHub V1.0.2 had only `--lang zh_cn` + no Arabic docs)
+- 📘 **`--lang` value range documented as 12 languages** — GitHub V1.0.2 never enumerated the full 11-language list; V1.0.3 updates this to 12 languages (includes `ar_sa`)
+- 🌐 **All CLI examples kept in sync with the latest feature parameters** — continued alignment with new F10–F14 module availability (even though those aren't separately documented as CLI samples)
 
 ---
 
-### 📝 版本新增/优化记录
+## Changelog (GitHub release numbering: GitHub V1.0.2 → GitHub V1.0.3 → GitHub V1.0.4)
 
-**V1.0.4 新增/优化：**
-- 🇸🇦 **阿拉伯语评估报告**：结合 F7 的阿拉伯语术语词典，评估结果可直接输出阿拉伯语版本
-- 🌐 **12种语言评估输出**：移植评估的结论摘要支持全部12种语言导出
-
-**V1.0.2 新增/优化：**
-- 📊 **评分算法优化**：可行性评分引入加权维度（Mixin风险×2 + API变更×1.5 + 依赖×1）
+> **Note**: The standalone Changelog section first shipped in GitHub V1.0.3. V1.0.4 entries below compare against the actual GitHub_V1.0.3 package README.
 
 ---
 
-### F8 报错修复
+### GitHub V1.0.4 (2026-09-12) — Compatibility Expansion + AI Translation + Activity Monitoring
 
-分析 Minecraft 崩溃日志，识别错误模式，推荐最佳模组版本。
+#### Feature Optimizations (4)
 
-**支持的崩溃模式（25+种）**:
-- 内存溢出 (OOM)
-- 光影冲突
-- 加载器版本不匹配
-- 模组缺失/冲突
-- 渲染错误
-- Mixin 冲突
-- 类加载失败
-- 数据序列化错误
-- ...等
+| Feature | V1.0.3 | V1.0.4 |
+|---------|--------|--------|
+| **F1 JAR Structure Parser** | 3 metadata formats | Added Quilt loader deep support: parses quilt.mod.json metadata, recognizes quilt_loader dependency |
+| **F3 Environment Setup Guide** | Windows-only paths | ① Cross-platform path detection (Windows/macOS/Linux) ② MC 1.21.2+/1.21.3+/1.21.4+ support |
+| **F7 Multi-language Translation** | 12-language dictionary | ① Three-mode translation (offline/online/hybrid) ② AI Agent online translation + learning mechanism ③ New offline translation DB |
+| **F9 Migration Feasibility Assessment** | 4 version pairs | ① MC 1.21.2/1.21.3/1.21.4 compatibility matrix expanded (4→16 pairs) ② Quilt loader support |
 
-**版本推荐策略**:
-1. **优先本地数据库** - 快速响应，离线可用
-2. **联网查询 Modrinth API** - 全生态模组覆盖
-3. **智能缓存** - 避免重复 API 调用
+#### New Operations Capabilities (3)
 
----
+| Module | Description |
+|--------|-------------|
+| **F10 Real-time Activity Reporting** | Client events reported in real-time: app_started/feature_called/error_occurred/payment_page_opened |
+| **D2 Payment Panel Behavior Monitoring** | Payment panel: behavior time column + 5 suspicious behavior badges |
+| **Weekly Activity Email Aggregation** | Auto-send weekly activity report every Monday |
 
-### 📝 版本新增/优化记录
+#### Deployment Preparation (B0)
 
-**V1.0.4 新增/优化：**
-- 🇸🇦 **阿拉伯语崩溃分析输出**：崩溃报告支持阿拉伯语结论摘要
-- 🔍 **匹配精度提升**：崩溃模式库新增阿拉伯语版本常见崩溃（如编码相关错误）
+- New `docs/deployment_guide.md` deployment guide
+- New `deploy/` directory templates (.env/start_server.sh/nginx.conf)
 
-**V1.0.3 新增/优化：**
-- 📚 **模式库扩充**：崩溃模式库从 20+ 扩充至 25+ 种
-- 🗺️ **Java 版本映射补全**：补全 MC 1.21.3 等新版本与 Java 对应关系
+#### Bug Fixes
 
-**V1.0.2 新增/优化：**
-- 📦 **离线数据库增强**：新增50+热门模组索引，离线时也能做版本推荐
-- 🚀 **缓存命中提升**：TTL+磁盘双级缓存，避免重复 API 调用
-- ⚡ **推荐响应提速**：模板预编译+静态资源缓存，报告生成速度提升约 40%
+- Fixed translator.py logger import order bug
+- Fixed jar_parser.py quilt.mod.json parsing extra bracket
+- Fixed _simple_translate function signature for multi-language dictionary
+- Fixed report_gen.py CSS variable .format() misinterpretation
 
 ---
 
-### F8.1 自动修复
+### GitHub V1.0.3 (2026-08-25) — Major Release
 
-一键将模组升级到推荐版本。
+#### Brand-new modules (absent from GitHub V1.0.2 feature table)
 
-**工作流程**:
-```
-崩溃日志 → 分析 → 提取需升级模组 → 下载推荐版本 → 备份旧版本 → 替换 → 生成报告
-```
+| Module | Description (why new) |
+|--------|----------------------|
+| F10 Authorization & Usage Management | GitHub V1.0.2 README feature table had no F10 row (internal declaration existed only in SKILL.json); V1.0.3 first public listing: machine ID, free-period, usage counting, membership tiers, license activation |
+| F12 Online Payment System | GitHub V1.0.2 Pricing only said "future subscriptions"; V1.0.3 ships Alipay / WeChat Pay / PayPal with 3 subscription plans (monthly/quarterly/yearly) |
+| F13 Admin Dashboard | GitHub V1.0.2 had zero admin console or Web UI; V1.0.3 adds a Web-based console with random admin key, 1h tokens, user/order/permission/email/notification management |
+| F14 Automated Business Reports | GitHub V1.0.2 had no reporting features; V1.0.3 adds inactive-user lists, configurable expiry reminders, monthly business summary, and a manual test-email trigger |
 
-**安全机制**:
-- ✅ 强制备份旧版本 JAR（`backup_mods_<时间戳>/`）
-- ✅ 回滚支持（将备份文件复制回 mods 目录即可恢复）
-- ✅ 操作前确认提示（可通过 `--auto-confirm` 跳过）
-- ✅ 详细日志记录
+#### Existing modules with major upgrades (compared to V1.0.2 README)
 
----
+1. **F11 Payment Guide — from missing to feature-table listed**
+   - GitHub V1.0.2 had no F11 row in its README feature table (F11 was only an internal disabled placeholder);
+   - GitHub V1.0.3 ships F11 as a documented feature with 3-level progressive guidance (friendly reminder → plan display → support & appreciation, non-mandatory).
 
-## 📁 项目结构
+2. **F7 Multi-Language Translation — 10 languages → 12 languages, + Arabic MSA + RTL**
+   - GitHub V1.0.2 README explicitly listed 10 languages only (no Arabic);
+   - GitHub V1.0.3 adds ar_sa Modern Standard Arabic, an Arabic MC terms dictionary (Tool→أداة, Armor→درع, etc.), multi-language dictionary lookup, and RTL rendering on payment pages.
 
-```
-mc-skill-v1/
-├── main.py                 # 主程序入口
-├── config.py               # 全局配置（V1.0.4 12种语言列表）
-├── requirements.txt        # 依赖清单
-├── core/                   # 核心功能模块
-│   ├── auth_manager.py    # 授权管理与付费体系
-│   ├── auto_fix.py        # F8.1 自动修复
-│   ├── crash_analyzer.py  # F8 报错修复
-│   ├── env_builder.py     # F3 环境搭建
-│   ├── i18n.py            # V1.0.4 多语言系统（12种语言含ar_sa）
-│   ├── jar_parser.py      # F1 JAR 解析
-│   ├── migration_assessor.py # F9 移植可行性评估
-│   ├── mixin_scanner.py   # F4 Mixin 扫描
-│   ├── mod_searcher.py    # F2 模组检索
-│   ├── modrinth_client.py # Modrinth API 客户端（V1.0.2 增强缓存）
-│   ├── offline_db.py     # V1.0.2 离线数据库模块
-│   ├── payment_page.py    # F11 付费引导页面（V1.0.4 12种语言+RTL）
-│   ├── payment_i18n.py    # V1.0.4 付费页面多语言翻译
-│   ├── repacker.py        # F5 资源重打包
-│   ├── save_sync.py       # F6 存档同步
-│   └── translator.py      # F7 多语言翻译（V1.0.4 含阿拉伯语MC术语词典）
-├── server/                 # V1.0.4 服务器端（商业化运营体系）
-│   ├── auth_server.py     # F13 授权服务器+管理控制台API（FastAPI）
-│   ├── scheduled_notifications.py # F14 定时通知调度器
-│   ├── static/
-│   │   └── admin.html     # 管理控制台前端（随机密钥登录）
-│   └── data/              # 服务器数据（闭源，不随客户端分发）
-│       ├── authorizations.json  # 用户授权数据库
-│       ├── orders.json          # 订单数据库
-│       └── schedule_config.json # 定时报表配置
-├── data/                   # 数据文件
-│   ├── crash_patterns.json      # 崩溃模式库（V1.0.3扩充至25+种）
-│   ├── java_version_map.json    # Java 版本映射
-│   ├── launcher_paths.json      # 启动器路径
-│   └── mod_version_recommendations.json  # 模组版本推荐数据库（V1.0.3扩充65+）
-├── assets/                 # 资源文件
-│   └── payment/            # V1.0.4 收款二维码（9张：3渠道×3套餐）
-├── utils/                  # 工具模块
-│   ├── api_client.py      # API 请求封装
-│   ├── jar_utils.py       # JAR 工具函数
-│   ├── logger.py          # 日志工具
-│   └── report_gen.py      # 报告生成（V1.0.2 性能优化版）
-├── release/               # 各平台发布包描述（ClawHub/GitHub/SkillHub）
-├── verify_p1~p6.py        # 各阶段验证脚本
-└── _expand_db.py          # 数据库扩充脚本
-```
+3. **F2 Mod Search & Download — description expanded**
+   - GitHub V1.0.2 only advertised "version and loader filtering";
+   - GitHub V1.0.3 adds batch search, category search, related mod recommendations, dynamic categories, and auto-update.
+
+#### Dataset & infrastructure improvements
+
+- Mod recommendation index expanded from 50+ to 65+ entries;
+- Crash pattern 25+ headline count retained, but actual scenarios and fix suggestions expanded behind that number;
+- Java version mapping table completed;
+- API cache (TTL + disk persistence), offline-database module, and report-rendering performance improvements continue to ship (already implemented for V1.0.2 but now carried forward);
+- Security/compliance flow for F11 (from disabled placeholder → progressive guidance) is part of the F11 upgrade above.
+
+### GitHub V1.0.2 (Current Online Release)
+
+- No standalone Changelog section was present in the V1.0.2 README. For users who read only the README, the headline delta between V1.0.2 and V1.0.0 is what V1.0.2 delivered on release (API caching, offline DB, rendering speedups, 10-language i18n, and the compliance pass).
 
 ---
 
-### 📝 版本新增/优化记录
+## Author
 
-**V1.0.4 新增/目录变更：**
-- 🆕 `server/` 目录：新增服务器端模块（F13 授权服务器 + F14 定时调度 + admin.html 前端 + data/ JSON数据库）
-- 🆕 `assets/payment/` 目录：9张收款二维码（支付宝/微信/PayPal × 月卡/季卡/年卡）
-- 🆕 `core/payment_i18n.py`：独立付费页面多语言模块
-- 📝 `core/i18n.py`：11→12种语言，新增 ar_sa 国家映射（沙特/阿联酋/埃及等）
-- 📝 `core/payment_page.py`：12种语言+RTL支持+强制付款提示
-- 📝 `core/translator.py`：新增阿拉伯语 MC 术语词典
-
-**V1.0.3 新增/变更：**
-- 📝 `data/mod_version_recommendations.json`：扩充至65+模组
-- 📝 `data/crash_patterns.json`：新增5+种崩溃模式
-- 📝 `data/java_version_map.json`：版本映射补全
-
-**V1.0.2 新增/变更：**
-- 🆕 `core/offline_db.py`：离线数据库模块
-- 📝 `core/modrinth_client.py`：缓存系统重构（TTL+磁盘双级）
-- 📝 `utils/report_gen.py`：模板预编译+批量生成
-
-**V1.0.1 新增/变更：**
-- 🆕 `core/translator.py`、`core/auto_fix.py`、`core/migration_assessor.py`（F7/F8.1/F9）
-- 📝 `core/mod_searcher.py`：批量搜索、分类搜索、同类推荐、动态分类
+- **Author**: Liang030214
+- **Version**: v1.0.4  *(GitHub release tag; internal dev build corresponds to V1.0.5)*
+- **License**: MIT License
+- **Homepage**: https://github.com/Liang030214/mc-skill-v1
+- **Tags**: minecraft, mod, forge, fabric, neoforge, quilt, mixin, translation, crash-fix, migration, i18n, arabic, rtl, payment, admin, reports, ai-translation, activity-monitoring
 
 ---
 
-## 🔧 命令行参数
+### 📝 Version Additions / Optimizations by Release (GitHub platform numbering)
 
-### 全局参数
+**GitHub V1.0.4 added/optimized (upcoming):**
+- 🏷️ **Tags extended** — added `ai-translation, activity-monitoring` tags matching new capabilities
+- 📌 **Version set to GitHub V1.0.4** — independent from internal dev version (which is V1.0.5)
+- 🌍 **MC version coverage updated** — from 1.21.x to 1.21.4+
+- 🧵 **Quilt loader deep support noted** — from basic listing to "deep support (quilt.mod.json parsing)"
 
-| 参数 | 说明 | 默认值 |
-|------|------|--------|
-| `--feature` | 选择功能模块 | 交互式选择 |
-| `--lang` | 输出语言（12种） | `zh_cn` |
-| `--output-dir` | 输出目录 | `./output/` |
-| `--auto-confirm` | 跳过确认提示 | `False` |
-| `--device` | 设备类型（pc/mobile/pad） | `pc` |
-
-### 功能专用参数
-
-| 参数 | 对应功能 | 说明 |
-|------|----------|------|
-| `--crash-log` | F8/F8.1 | 崩溃日志路径 |
-| `--fix-mods-dir` | F8.1 | mods 目录路径 |
-| `--query` / `--mod-id` | F2 | 搜索关键词/模组ID |
-| `--mc-version` | F2/F3/F9 | MC版本（如1.21.1） |
-| `--loader` | F2/F3/F4/F9 | 加载器（neoforge/forge/fabric/quilt） |
-| `--jar-path` | F1/F9 | JAR文件路径 |
-| `--mods-dir` | F4/F7 | mods目录路径 |
-| `--from-*` / `--to-*` | F9 | 源/目标环境参数 |
-| `--action` / `--save-dir` / `--netdisk-dir` | F6 | 存档同步参数 |
+**GitHub V1.0.3 added/optimized:**
+- 🏷️ **Tags extended** — added `arabic, rtl, payment, admin, reports` tags matching new commercial stack
+- 📌 **Version set to GitHub V1.0.3** — independent from internal dev version (which is V1.0.4)
 
 ---
 
-## 🇸🇦 阿拉伯语使用指南
+## Supported MC Versions
 
-通用阿拉伯语（Modern Standard Arabic, MSA）支持已全面上线，面向所有阿拉伯语使用者：
+- 1.16.5 ~ 1.21.4+ (V1.0.4: added 1.21.2+/1.21.3+/1.21.4+)
 
-- **支付页面语言切换**：右上角 🌐 按钮下拉选择 **العربية ar_sa**，页面自动变为 RTL 从右向左书写方向
-- **模组翻译输出阿拉伯语**：`python main.py --feature translator --lang ar_sa`，基于 MC 术语词典翻译
-- **IP 地理定位自动切换**：沙特 SA / 阿联酋 AE / 埃及 EG / 约旦 JO / 卡塔尔 QA / 巴林 BH / 科威特 KW / 阿曼 OM / 叙利亚 SY / 也门 YE / 黎巴嫩 LB / 巴勒斯坦 PS / 苏丹 SD / 突尼斯 TN / 摩洛哥 MA / 阿尔及利亚 DZ / 利比亚 LY / 伊拉克 IQ，以上国家 IP 自动切换为阿拉伯语
+## Supported Loaders
 
----
-
-## 🔗 项目资源
-
-| 资源 | 链接/路径 |
-|------|----------|
-| ClawHub 发布页 | [release/clawhub_desc.md](release/clawhub_desc.md) |
-| GitHub 发布页 | [release/github_desc.md](release/github_desc.md) |
-| SkillHub 发布页 | [release/skillhub_desc.md](release/skillhub_desc.md) |
-| 完整 Changelog | [release/changelog_v1.md](release/changelog_v1.md) |
-| 官方规范文档 | [docs/superpowers/specs/](docs/superpowers/specs/) |
-| SKILL 功能声明 | `SKILL.md` / `SKILL.json` |
-
----
-
-## 📄 开源协议
-
-本项目代码按仓库根目录 `LICENSE` 声明开源。以下文件为闭源或特殊协议：
-
-- `server/data/*.json`（授权/订单/配置数据库）：**绝对闭源**
-- `server/auth_server.py`（管理控制台服务端）：**绝对闭源**
-- `core/auth_manager.py`（授权管理核心）：**半开源（代码混淆/编译为.pyd）**
-- `assets/brand/个人Logo`：**闭源或CC协议**
-- 支付二维码（`assets/payment/*`）：**仅作者本人可使用，禁止二次分发**
+- Forge (47.x+)
+- NeoForge (21.1+)
+- Fabric (0.15+)
+- Quilt (0.23+) — V1.0.4: deep support (quilt.mod.json parsing)

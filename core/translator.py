@@ -38,6 +38,14 @@ from utils.report_gen import ReportGenerator
 
 logger = get_logger("translator")
 
+# V1.0.5: 离线翻译库
+try:
+    from data.translation_db import get_db as _get_translation_db
+    _translation_db = _get_translation_db()
+except ImportError:
+    _translation_db = None
+    logger.warning("离线翻译库未加载（data.translation_db 导入失败）")
+
 # === MC基础词条分类正则 ===
 CATEGORY_PATTERNS = {
     "block": re.compile(r"^(block|tile)\.", re.IGNORECASE),
@@ -267,23 +275,30 @@ def _categorize_key(key: str) -> str:
     return "other"
 
 
-def _simple_translate(text: str) -> str:
+def _simple_translate(text: str, target_lang: str = "zh_cn") -> str:
     """简易翻译（基于词典替换）
 
-    V1版本使用词典替换方式，V2/V3将接入AI翻译API
+    V1.0.5 改进：支持多语言词典，按 target_lang 选择对应术语表
+    离线模式下使用此函数；未匹配的词条原样返回
     """
     if not text or not isinstance(text, str):
         return text
 
     result = text
 
-    # 按长度降序排列，优先匹配长词
-    sorted_terms = sorted(MC_TERMS_DICT.items(), key=lambda x: len(x[0]), reverse=True)
+    # 按 target_lang 选择术语词典
+    terms_dict = LANG_TERMS_DICT.get(target_lang, {})
+    if not terms_dict:
+        # 无对应词典，原样返回
+        return result
 
-    for en, zh in sorted_terms:
+    # 按长度降序排列，优先匹配长词
+    sorted_terms = sorted(terms_dict.items(), key=lambda x: len(x[0]), reverse=True)
+
+    for en, translated in sorted_terms:
         # 仅替换独立单词，不替换子串
         pattern = re.compile(r'\b' + re.escape(en) + r'\b', re.IGNORECASE)
-        result = pattern.sub(zh, result)
+        result = pattern.sub(translated, result)
 
     return result
 
@@ -347,29 +362,243 @@ def _categorize_entries(lang_data: Dict[str, Any]) -> Dict[str, List[Tuple[str, 
     return dict(categorized)
 
 
+def _emit_translation_prompt(
+    mod_id: str,
+    target_lang: str,
+    pending_entries: List[Tuple[str, str]],
+    jar_path: str,
+    timestamp: str,
+) -> str:
+    """生成 AI Agent 翻译 prompt 文件
+
+    当离线词典和翻译库都未命中时，生成 prompt 文件让宿主 AI Agent 翻译
+
+    Returns:
+        prompt 文件路径
+    """
+    output_dir = config.OUTPUT_DIR / "translation_prompts"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    prompt_file = output_dir / f"translation_prompt_{timestamp}.md"
+
+    # 语言名称映射
+    lang_names = {
+        "zh_cn": "简体中文", "zh_tw": "繁体中文", "ja_jp": "日本語",
+        "ko_kr": "한국어", "ru_ru": "Русский", "es_es": "Español",
+        "it_it": "Italiano", "el_gr": "Ελληνικά", "th_th": "ไทย",
+        "hi_in": "हिन्दी", "ar_sa": "العربية",
+    }
+    lang_name = lang_names.get(target_lang, target_lang)
+
+    # 构建待翻译条目表格
+    entries_text = ""
+    for i, (key, value) in enumerate(pending_entries, 1):
+        entries_text += f"| {i} | `{key}` | `{value}` |\n"
+
+    prompt_content = f"""# MC 模组翻译任务
+
+## 任务说明
+请将以下 Minecraft 模组的英语语言条目翻译为 **{lang_name}**（`{target_lang}`）。
+
+## 模组信息
+- 模组 ID: `{mod_id}`
+- JAR 文件: `{jar_path}`
+
+## 翻译规则
+1. 保持 Minecraft 术语的准确性（如 "Block" → "方块"，"Item" → "物品"）
+2. 保留格式化占位符（如 `%s`, `%d`, `%1$s` 等不动）
+3. 保留颜色代码（如 `§a`, `§b` 等不动）
+4. 翻译完成后，请将结果写入以下 JSON 文件：
+   `output/translation_responses/translation_response_{timestamp}.json`
+
+## 响应文件格式
+```json
+{{
+  "mod_id": "{mod_id}",
+  "target_lang": "{target_lang}",
+  "translations": {{
+    "<原文键名>": "<翻译结果>",
+    ...
+  }}
+}}
+```
+
+## 待翻译条目（共 {len(pending_entries)} 条）
+
+| # | 键名 | 英文原文 |
+|---|------|----------|
+{entries_text}
+
+## 注意事项
+- 请翻译 value 列的英文原文，不要修改 key
+- 翻译结果写入 JSON 文件的 `translations` 字段
+- 完成后运行: `python main.py --feature translator --mode apply-response --response-file output/translation_responses/translation_response_{timestamp}.json --jar-path {jar_path} --target-lang {target_lang}`
+"""
+
+    prompt_file.write_text(prompt_content, encoding="utf-8")
+    logger.info(f"翻译 prompt 已生成: {prompt_file}")
+    return str(prompt_file)
+
+
+def _apply_translation_response(
+    response_path: str,
+    jar_path: str,
+    target_lang: str,
+) -> Dict[str, Any]:
+    """应用 AI Agent 的翻译响应
+
+    读取响应 JSON，写入翻译库（学习机制），然后调用 F5 重打包进 JAR
+
+    Returns:
+        结果字典
+    """
+    response_file = Path(response_path)
+    if not response_file.exists():
+        return {"status": "error", "error": f"响应文件不存在: {response_path}"}
+
+    try:
+        data = json.loads(response_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        return {"status": "error", "error": f"JSON 解析失败: {e}"}
+
+    mod_id = data.get("mod_id", Path(jar_path).stem)
+    translations = data.get("translations", {})
+
+    if not translations:
+        return {"status": "error", "error": "响应中无翻译条目"}
+
+    # === 学习机制：写入翻译库 ===
+    if _translation_db:
+        _translation_db.store_batch(mod_id, target_lang, translations)
+        logger.info(f"已学习 {len(translations)} 条翻译到离线库（mod={mod_id}, lang={target_lang}）")
+
+    # === 调用 F5 重打包 ===
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    patch_resources_dir = config.PATCH_DIR / "resources"
+    patch_resources_dir.mkdir(parents=True, exist_ok=True)
+
+    # 从 JAR 推断语言文件路径
+    jar_path_obj = Path(jar_path)
+    lang_files = _find_language_files(jar_path_obj)
+    if not lang_files:
+        return {"status": "error", "error": "JAR 中未找到 en_us.json"}
+
+    first_lang_path = lang_files[0][0]
+    target_lang_jar_path = first_lang_path.replace("en_us.json", f"{target_lang}.json")
+
+    # 保存翻译到补丁目录
+    patch_save_path = patch_resources_dir / target_lang_jar_path
+    patch_save_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(patch_save_path, "w", encoding="utf-8") as f:
+        json.dump(translations, f, ensure_ascii=False, indent=2)
+
+    # 调用 F5
+    try:
+        from core.repacker import run as repacker_run
+        repacker_args = type("Args", (), {
+            "jar_path": str(jar_path_obj),
+            "resources_dir": str(patch_resources_dir),
+            "output": str(Path(config.DOWNLOADS_DIR) / f"{jar_path_obj.stem}_{target_lang}.jar"),
+            "validate": True,
+        })()
+        repacker_result = repacker_run(repacker_args)
+        if repacker_result.get("status") == "success":
+            repacked_jar = repacker_result["output_files"].get("downloaded", "")
+            logger.info(f"翻译 JAR 已生成: {repacked_jar}")
+            return {
+                "status": "success",
+                "mod_id": mod_id,
+                "target_lang": target_lang,
+                "translated_count": len(translations),
+                "learned_to_db": _translation_db is not None,
+                "patch_path": str(patch_save_path),
+                "repacked_jar": repacked_jar,
+            }
+        else:
+            return {
+                "status": "warning",
+                "mod_id": mod_id,
+                "translated_count": len(translations),
+                "learned_to_db": _translation_db is not None,
+                "patch_path": str(patch_save_path),
+                "repack_error": repacker_result.get("errors"),
+            }
+    except Exception as e:
+        return {
+            "status": "warning",
+            "mod_id": mod_id,
+            "translated_count": len(translations),
+            "learned_to_db": _translation_db is not None,
+            "patch_path": str(patch_save_path),
+            "repack_error": str(e),
+        }
+
+
 def _generate_zh_cn(
     lang_data: Dict[str, Any],
     categories: Dict[str, List[Tuple[str, str]]],
     target_lang: str,
-) -> Tuple[Dict[str, str], Dict[str, List[str]]]:
-    """生成中文翻译文件
+    mod_id: str = "",
+    mode: str = "hybrid",
+    jar_path: str = "",
+    timestamp: str = "",
+) -> Tuple[Dict[str, str], Dict[str, List[str]], List[Tuple[str, str]], Optional[str]]:
+    """生成翻译文件（V1.0.5 三模式：offline/online/hybrid）
+
+    Args:
+        mode: offline=仅词典+翻译库; online=仅AI Agent; hybrid=词典+翻译库优先，未命中发prompt
 
     Returns:
-        (zh_cn_data, quality_notes)
+        (translated_data, quality_notes, pending_entries, prompt_path)
+        - pending_entries: 未命中需 AI 翻译的条目
+        - prompt_path: 生成的 prompt 文件路径（online/hybrid 模式且有待翻译条目时）
     """
-    zh_cn = {}
+    translated = {}
     quality_notes = []
+    pending_entries = []  # 未命中，需 AI 翻译的条目
+    prompt_path = None
 
     # 仅翻译基础词条（V1范围）
     v1_categories = {"block", "item", "tooltip", "advancement", "entity", "other"}
+
+    # 查询翻译库已有条目
+    db_entries = {}
+    if _translation_db and mod_id:
+        db_entries = _translation_db.lookup_batch(mod_id, target_lang)
 
     for category, entries in categories.items():
         if category not in v1_categories:
             continue
 
         for key, value in entries:
-            translated = _simple_translate(value, target_lang)
-            zh_cn[key] = translated
+            # 1. 翻译库命中（最高优先级）
+            if key in db_entries:
+                translated[key] = db_entries[key]
+                continue
+
+            # 2. 词典翻译（offline 和 hybrid 模式）
+            if mode in ("offline", "hybrid"):
+                dict_translated = _simple_translate(value, target_lang)
+                # 如果词典有翻译且翻译结果与原文不同，使用词典翻译
+                if dict_translated != value:
+                    translated[key] = dict_translated
+                    continue
+
+            # 3. 未命中 → 加入 pending（online 和 hybrid 模式）
+            if mode in ("online", "hybrid"):
+                pending_entries.append((key, value))
+            else:
+                # offline 模式：原样保留未命中的条目
+                translated[key] = value
+
+    # 生成 prompt 文件（有待翻译条目且非 offline 模式）
+    if pending_entries and mode in ("online", "hybrid") and timestamp:
+        prompt_path = _emit_translation_prompt(
+            mod_id or "unknown",
+            target_lang,
+            pending_entries,
+            jar_path,
+            timestamp,
+        )
 
     # 质量说明
     cat_counts = {k: len(v) for k, v in categories.items() if k in v1_categories}
@@ -379,8 +608,12 @@ def _generate_zh_cn(
         quality_notes.append("建议人工校对：advancement类词条需结合游戏进度理解")
     if cat_counts.get("config", 0) > 0:
         quality_notes.append("配置面板文本未汉化（V2功能），如需请升级到V2")
+    if pending_entries and mode in ("online", "hybrid"):
+        quality_notes.append(f"有 {len(pending_entries)} 条待 AI Agent 翻译，prompt 文件已生成")
+    if db_entries:
+        quality_notes.append(f"翻译库命中 {len(db_entries)} 条历史翻译")
 
-    return zh_cn, quality_notes
+    return translated, quality_notes, pending_entries, prompt_path
 
 
 def _generate_html_report(
@@ -537,13 +770,15 @@ def _generate_html_report(
 
 
 def run(args) -> Dict[str, Any]:
-    """F7 基础汉化主入口
+    """F7 基础汉化主入口（V1.0.5 三模式：offline/online/hybrid）
 
     Args:
         args: argparse.Namespace，需包含:
             - jar_path: JAR文件路径
             - target_lang: 目标语言，默认zh_cn
             - patch_only: 仅生成补丁不固化进JAR
+            - mode: 翻译模式（offline/online/hybrid，默认hybrid）
+            - response_file: apply-response 模式的响应文件路径
             - output: 输出目录(可选)
 
     Returns:
@@ -553,7 +788,35 @@ def run(args) -> Dict[str, Any]:
     jar_path = getattr(args, "jar_path", None)
     target_lang = getattr(args, "target_lang", "zh_cn")
     patch_only = getattr(args, "patch_only", False)
+    mode = getattr(args, "mode", "hybrid")
+    response_file = getattr(args, "response_file", None)
     output_dir = getattr(args, "output", None) or str(config.OUTPUT_DIR / "reports")
+
+    # === apply-response 模式：应用 AI Agent 翻译响应 ===
+    if mode == "apply-response":
+        if not response_file:
+            return config.make_result(
+                status="error",
+                feature="F7",
+                input_summary={"mode": "apply-response"},
+                result={"error": "apply-response 模式需要 --response-file 参数"},
+                errors=["必须指定 --response-file 参数"],
+            )
+        if not jar_path:
+            return config.make_result(
+                status="error",
+                feature="F7",
+                input_summary={"mode": "apply-response"},
+                result={"error": "apply-response 模式需要 --jar-path 参数"},
+                errors=["必须指定 --jar-path 参数"],
+            )
+        result = _apply_translation_response(response_file, jar_path, target_lang)
+        return config.make_result(
+            status=result.get("status", "success"),
+            feature="F7",
+            input_summary={"mode": "apply-response", "jar_path": jar_path, "response_file": response_file},
+            result=result,
+        )
 
     if not jar_path:
         return config.make_result(
@@ -574,7 +837,17 @@ def run(args) -> Dict[str, Any]:
             errors=[f"JAR文件不存在: {jar_path}"],
         )
 
-    logger.info(f"开始汉化: {jar_path}")
+    # 验证 mode 参数
+    if mode not in ("offline", "online", "hybrid"):
+        return config.make_result(
+            status="error",
+            feature="F7",
+            input_summary={"mode": mode},
+            result={"error": f"无效的翻译模式: {mode}"},
+            errors=["--mode 必须是 offline/online/hybrid/apply-response"],
+        )
+
+    logger.info(f"开始翻译: {jar_path} (模式={mode}, 目标语言={target_lang})")
 
     # === 1. 查找语言文件 ===
     lang_files = _find_language_files(jar_path_obj)
@@ -613,11 +886,27 @@ def run(args) -> Dict[str, Any]:
     # === 4. 分类整理 ===
     categories = _categorize_entries(merged_lang)
 
-    # === 5. 生成翻译 ===
-    zh_cn, quality_notes = _generate_zh_cn(merged_lang, categories, target_lang)
+    # === 4.5 推断 mod_id（从 JAR 元数据） ===
+    mod_id = jar_path_obj.stem
+    try:
+        from core.jar_parser import parse_mod_metadata, parse_jar_structure
+        tmp_dir = create_temp_dir("meta_extract")
+        extract_jar(jar_path_obj, tmp_dir)
+        meta = parse_mod_metadata(jar_path_obj, tmp_dir)
+        if meta.get("mod_id"):
+            mod_id = meta["mod_id"]
+        cleanup_temp_dir(tmp_dir)
+    except Exception:
+        pass  # 推断失败用文件名
 
-    # === 6. 保存zh_cn.json ===
+    # === 5. 生成翻译 ===
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    translated, quality_notes, pending_entries, prompt_path = _generate_zh_cn(
+        merged_lang, categories, target_lang,
+        mod_id=mod_id, mode=mode, jar_path=str(jar_path_obj), timestamp=timestamp,
+    )
+
+    # === 6. 保存翻译文件 ===
     os.makedirs(output_dir, exist_ok=True)
 
     # 补丁资源目录
@@ -626,22 +915,21 @@ def run(args) -> Dict[str, Any]:
 
     # 从语言文件路径推断资源路径
     first_lang_path = lang_files[0][0]
-    # en_us.json -> zh_cn.json
-    zh_cn_jar_path = first_lang_path.replace("en_us.json", f"{target_lang}.json")
+    target_lang_jar_path = first_lang_path.replace("en_us.json", f"{target_lang}.json")
 
     # 保存到补丁目录
-    patch_save_path = patch_resources_dir / zh_cn_jar_path
+    patch_save_path = patch_resources_dir / target_lang_jar_path
     os.makedirs(patch_save_path.parent, exist_ok=True)
 
     with open(patch_save_path, "w", encoding="utf-8") as f:
-        json.dump(zh_cn, f, ensure_ascii=False, indent=2)
+        json.dump(translated, f, ensure_ascii=False, indent=2)
 
-    logger.info(f"汉化补丁已生成: {patch_save_path}")
+    logger.info(f"翻译补丁已生成: {patch_save_path}")
 
     # === 7. 生成报告 ===
     total_entries = sum(len(v) for v in categories.values())
     report_html = _generate_html_report(
-        str(jar_path_obj), target_lang, categories, zh_cn, quality_notes, timestamp
+        str(jar_path_obj), target_lang, categories, translated, quality_notes, timestamp
     )
     html_path = Path(output_dir) / f"translator_{timestamp}.html"
     with open(html_path, "w", encoding="utf-8") as f:
@@ -651,13 +939,19 @@ def run(args) -> Dict[str, Any]:
     json_path = Path(output_dir) / f"translator_{timestamp}.json"
     json_data = {
         "jar_path": str(jar_path_obj),
+        "mod_id": mod_id,
         "target_lang": target_lang,
+        "mode": mode,
         "categories": {k: len(v) for k, v in categories.items()},
         "total_entries": total_entries,
-        "translated_entries": len(zh_cn),
+        "translated_entries": len(translated),
+        "pending_entries": len(pending_entries),
         "quality_notes": quality_notes,
         "patch_path": str(patch_save_path),
     }
+    if prompt_path:
+        json_data["prompt_path"] = prompt_path
+        json_data["status_detail"] = "awaiting_agent" if pending_entries else "complete"
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(json_data, f, ensure_ascii=False, indent=2)
 
@@ -667,45 +961,62 @@ def run(args) -> Dict[str, Any]:
         "data": str(json_path),
         "patch": str(patch_save_path),
     }
+    if prompt_path:
+        output_files["prompt"] = prompt_path
 
-    if not patch_only:
+    # offline 模式或有翻译结果且无 pending 时才固化
+    should_repack = not patch_only and (mode == "offline" or len(pending_entries) == 0)
+    if should_repack:
         try:
             from core.repacker import run as repacker_run
 
             repacker_args = type("Args", (), {
                 "jar_path": str(jar_path_obj),
                 "resources_dir": str(patch_resources_dir),
-                "output": str(Path(config.DOWNLOADS_DIR) / f"{jar_path_obj.stem}_zh.jar"),
+                "output": str(Path(config.DOWNLOADS_DIR) / f"{jar_path_obj.stem}_{target_lang}.jar"),
                 "validate": True,
             })()
 
             repacker_result = repacker_run(repacker_args)
             if repacker_result.get("status") == "success":
                 output_files["repacked_jar"] = repacker_result["output_files"].get("downloaded", "")
-                logger.info(f"汉化JAR已生成: {output_files.get('repacked_jar')}")
+                logger.info(f"翻译JAR已生成: {output_files.get('repacked_jar')}")
             else:
                 logger.warning(f"F5固化失败: {repacker_result.get('errors')}")
         except Exception as e:
             logger.warning(f"调用F5失败: {e}")
 
+    # 确定最终状态
+    if pending_entries and mode in ("online", "hybrid"):
+        final_status = "awaiting_agent"
+        logger.info(f"翻译暂停：{len(pending_entries)} 条待 AI Agent 翻译，prompt: {prompt_path}")
+    else:
+        final_status = "success"
+
     logger.info(
-        f"汉化完成: {len(zh_cn)}条翻译, "
+        f"翻译完成: {len(translated)}条已翻译, "
+        f"{len(pending_entries)}条待翻译, "
         f"{len(quality_notes)}条质量提示"
     )
 
     return config.make_result(
-        status="success",
+        status=final_status,
         feature="F7",
         input_summary={
             "jar_path": str(jar_path_obj),
+            "mod_id": mod_id,
             "target_lang": target_lang,
+            "mode": mode,
             "patch_only": patch_only,
         },
         result={
             "total_entries": total_entries,
-            "translated_entries": len(zh_cn),
+            "translated_entries": len(translated),
+            "pending_entries": len(pending_entries),
             "categories": {k: len(v) for k, v in categories.items()},
             "quality_notes": quality_notes,
+            "prompt_path": prompt_path,
+            "mode": mode,
         },
         warnings=quality_notes,
         output_files=output_files,

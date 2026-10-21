@@ -32,7 +32,11 @@ import requests
 from datetime import datetime, timedelta
 
 # ==================== 配置 ====================
-SERVER_URL = "http://localhost:8000"
+SERVER_URL = (
+    os.environ.get("MC_SKILL_SERVER_URL")
+    or os.environ.get("MC_AUTH_SERVER_URL")
+    or "http://45.76.179.12"
+).rstrip("/")
 
 # 本地缓存路径（仅用于离线模式，不存 Token）
 CACHE_FILE = os.path.join(
@@ -46,9 +50,16 @@ POLL_INTERVAL = 300  # 5 分钟
 # 离线缓存有效期（秒）
 OFFLINE_CACHE_TTL = 3600  # 1 小时
 
-# 免费额度配置
-FREE_DAILY_LIMITS = {"auto": 20, "semi": 8, "evaluate": 1}
-MEMBER_DAILY_LIMITS = {"auto": 100, "semi": 50, "evaluate": 5}
+# 各等级每日限额（与 auth_manager.py DAILY_LIMITS 保持同步）
+DAILY_LIMITS_BY_TIER = {
+    "free":    {"auto": 5,   "semi": 3,   "evaluate": 1},
+    "normal":  {"auto": 100, "semi": 50,  "evaluate": 5},
+    "premium": {"auto": 200, "semi": 100, "evaluate": 10},
+}
+# 向后兼容别名（auth_manager.py 以外的代码可能引用）
+FREE_DAILY_LIMITS = DAILY_LIMITS_BY_TIER["free"]
+MEMBER_DAILY_LIMITS = DAILY_LIMITS_BY_TIER["normal"]
+PREMIUM_DAILY_LIMITS = DAILY_LIMITS_BY_TIER["premium"]
 
 # ==================== 全局状态 ====================
 # 内存中的授权状态（不落盘）
@@ -119,7 +130,7 @@ def verify_auth():
     返回:
         dict: {
             "authorized": bool,
-            "tier": str,  # "free" 或 "normal"
+            "tier": str,  # "free" / "normal" / "premium"
             "plan": str,  # "monthly"/"quarterly"/"yearly"
             "plan_cn": str,
             "remaining": dict,
@@ -134,7 +145,7 @@ def verify_auth():
     try:
         resp = requests.post(
             f"{SERVER_URL}/api/auth/quick-check",
-            json={"machine_id": machine_id},
+            json={"machine_id": machine_id, "client_version": "", "ai_platform": "", "device_info": {}},
             timeout=5
         )
         data = resp.json()
@@ -163,8 +174,8 @@ def verify_auth():
                 "plan": _memory_auth["plan"],
                 "plan_cn": _memory_auth["plan_cn"],
                 "expire_at": _memory_auth["expire_at"],
-                "remaining": get_remaining_quota(_memory_auth["plan"], is_member=True),
-                "message": f"会员有效，剩余 {_memory_auth['days_left']} 天",
+                "remaining": get_remaining_quota(_memory_auth["tier"]),
+                "message": f"会员有效（{_memory_auth['tier']}档），剩余 {_memory_auth['days_left']} 天",
                 "offline": False,
             }
         else:
@@ -187,7 +198,7 @@ def verify_auth():
                 "tier": "free",
                 "plan": "free",
                 "plan_cn": "免费用户",
-                "remaining": get_remaining_quota("free", is_member=False),
+                "remaining": get_remaining_quota("free"),
                 "message": reason,
                 "offline": False,
             }
@@ -217,7 +228,7 @@ def _check_offline(machine_id):
                     "plan": _memory_auth["plan"],
                     "plan_cn": _memory_auth["plan_cn"],
                     "expire_at": _memory_auth["expire_at"],
-                    "remaining": get_remaining_quota(_memory_auth["plan"], is_member=True),
+                    "remaining": get_remaining_quota(_memory_auth["tier"]),
                     "message": f"离线模式，会员有效，剩余 {_memory_auth['days_left']} 天",
                     "offline": True,
                 }
@@ -234,7 +245,7 @@ def _check_offline(machine_id):
                 "plan": cache.get("plan", "unknown"),
                 "plan_cn": cache.get("plan_cn", ""),
                 "expire_at": cache.get("expire_at"),
-                "remaining": get_remaining_quota(cache.get("plan", "monthly"), is_member=True),
+                "remaining": get_remaining_quota(cache.get("tier", "normal")),
                 "message": f"离线模式（缓存 {int((datetime.now()-cached_at).total_seconds())}秒前）",
                 "offline": True,
             }
@@ -245,7 +256,7 @@ def _check_offline(machine_id):
         "tier": "free",
         "plan": "free",
         "plan_cn": "免费用户",
-        "remaining": get_remaining_quota("free", is_member=False),
+        "remaining": get_remaining_quota("free"),
         "message": "离线模式，未找到有效授权",
         "offline": True,
     }
@@ -283,9 +294,9 @@ def stop_background_polling():
     _polling_active = False
 
 # ==================== 辅助函数 ====================
-def get_remaining_quota(plan, is_member):
-    """获取每日剩余额度"""
-    limits = MEMBER_DAILY_LIMITS if is_member else FREE_DAILY_LIMITS
+def get_remaining_quota(tier="free"):
+    """按等级获取每日额度（free/normal/premium）"""
+    limits = DAILY_LIMITS_BY_TIER.get(tier, DAILY_LIMITS_BY_TIER["free"])
     return {
         "auto": limits["auto"],
         "semi": limits["semi"],

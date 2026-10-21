@@ -1,4 +1,9 @@
 {
+  "minecraft_root_paths": {
+    "windows": "%APPDATA%/.minecraft",
+    "darwin": "~/Library/Application Support/minecraft",
+    "linux": "~/.minecraft"
+  },
   "launchers": {
     "pcl2": {
       "name_cn": "PCL2",

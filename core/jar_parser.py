@@ -416,7 +416,10 @@ def parse_mod_metadata(jar_path: Path, temp_dir: Path) -> Dict[str, Any]:
             deps = data.get("depends", {})
             if isinstance(deps, dict):
                 for dep_name, dep_version in deps.items():
-                    if dep_name not in ("fabricloader", "minecraft", "java"):
+                    # 检查是否是 Quilt 模组（fabric.mod.json 依赖 quilt_loader）
+                    if dep_name == "quilt_loader" or dep_name == "quilt_base":
+                        mod_info["loader"] = "quilt"
+                    if dep_name not in ("fabricloader", "minecraft", "java", "quilt_loader", "quilt_base"):
                         mod_info["dependencies"].append(
                             {
                                 "mod_id": dep_name,
@@ -426,6 +429,41 @@ def parse_mod_metadata(jar_path: Path, temp_dir: Path) -> Dict[str, Any]:
                         )
         except Exception as e:
             logger.warning(f"解析 fabric.mod.json 失败: {e}")
+
+    # 尝试 Quilt 清单（V1.0.5 新增）
+    quilt_json = temp_dir / "quilt.mod.json"
+    if quilt_json.exists() and not mod_info["mod_id"]:
+        try:
+            data = json.loads(quilt_json.read_text(encoding="utf-8"))
+            # quilt.mod.json 的 schema: { "schema_version": 1, "quilt_loader": { "id": ..., "version": ... }, "qsl": {...}, ... }
+            quilt_loader = data.get("quilt_loader", {})
+            mod_info["mod_id"] = quilt_loader.get("id", "")
+            mod_info["version"] = quilt_loader.get("version", "")
+            mod_info["loader"] = "quilt"
+
+            # 名称和描述可能在 metadata 字段
+            metadata = data.get("metadata", {})
+            mod_info["name"] = metadata.get("name", mod_info["mod_id"])
+            mod_info["description"] = metadata.get("description", "")
+            mod_info["authors"] = metadata.get("contributors", {})
+            if isinstance(mod_info["authors"], dict):
+                mod_info["authors"] = list(mod_info["authors"].keys())
+            mod_info["license"] = metadata.get("license", "")
+
+            # 依赖
+            deps = quilt_loader.get("depends", {})
+            if isinstance(deps, dict):
+                for dep_name, dep_version in deps.items():
+                    if dep_name not in ("quilt_loader", "quilt_base", "minecraft", "java"):
+                        mod_info["dependencies"].append(
+                            {
+                                "mod_id": dep_name,
+                                "type": "required",
+                                "version_range": str(dep_version),
+                            }
+                        )
+        except Exception as e:
+            logger.warning(f"解析 quilt.mod.json 失败: {e}")
 
     # 尝试从 MANIFEST.MF 读取版本信息
     manifest_file = temp_dir / "META-INF" / "MANIFEST.MF"

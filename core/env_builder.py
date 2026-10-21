@@ -224,6 +224,41 @@ def detect_system() -> Dict[str, Any]:
     return info
 
 
+def _get_minecraft_root(system_info: Dict) -> Path:
+    """根据操作系统返回 .minecraft 根目录的绝对路径
+
+    Windows: %APPDATA%/.minecraft
+    macOS:   ~/Library/Application Support/minecraft
+    Linux:   ~/.minecraft
+
+    Args:
+        system_info: detect_system() 返回的字典（用 os 字段）
+
+    Returns:
+        Path 对象，绝对路径
+    """
+    os_name = system_info.get("os", platform.system())
+
+    if os_name == "Windows":
+        appdata = os.environ.get("APPDATA", "")
+        if appdata:
+            return Path(appdata) / ".minecraft"
+        # 兜底：用户主目录
+        return Path.home() / ".minecraft"
+
+    elif os_name == "Darwin":
+        # macOS: ~/Library/Application Support/minecraft
+        return Path.home() / "Library" / "Application Support" / "minecraft"
+
+    elif os_name == "Linux":
+        # Linux: ~/.minecraft
+        return Path.home() / ".minecraft"
+
+    else:
+        # 未知系统，兜底用 ~/.minecraft
+        return Path.home() / ".minecraft"
+
+
 def get_java_recommendation(mc_version: str) -> Dict[str, Any]:
     """根据MC版本推荐Java版本
 
@@ -338,6 +373,9 @@ def generate_launcher_config(
     else:
         jvm = JVM_PRESETS["pc"]
 
+    # 跨平台 .minecraft 根目录
+    mc_root = _get_minecraft_root(system_info)
+
     config_data = {
         "launcher": launcher,
         "launcher_name": launcher_download.get("name", launcher),
@@ -353,6 +391,7 @@ def generate_launcher_config(
             "args": jvm["args"],
         },
         "game_dirs": {
+            "minecraft_root": str(mc_root),
             "saves": launcher_info.get("saves_path", ".minecraft/saves/"),
             "mods": launcher_info.get("mods_path", ".minecraft/mods/"),
         },
@@ -361,22 +400,29 @@ def generate_launcher_config(
     return config_data
 
 
-def generate_install_bat(
+def generate_install_script(
     launcher: str,
     mc_version: str,
     java_ver: str,
     launcher_download_url: str,
+    os_name: str = "Windows",
+    minecraft_root: str = "",
 ) -> str:
-    """生成PC端安装辅助脚本
+    """生成PC端安装辅助脚本（跨平台）
+
+    Windows → .bat
+    macOS/Linux → .sh
 
     Args:
         launcher: 启动器类型
         mc_version: MC版本
         java_ver: Java版本
         launcher_download_url: 启动器下载链接
+        os_name: 操作系统名称（Windows/Darwin/Linux）
+        minecraft_root: .minecraft 根目录绝对路径
 
     Returns:
-        .bat脚本内容
+        脚本内容字符串
     """
     launcher_name = LAUNCHER_DOWNLOADS.get(launcher, {}).get("name", launcher)
     java_ver_display = java_ver or "对应版本"
@@ -386,7 +432,69 @@ def generate_install_bat(
         else "https://adoptium.net/temurin/releases/"
     )
 
-    bat_content = f"""@echo off
+    # 根据OS确定 .minecraft 根目录
+    if minecraft_root:
+        mc_root = minecraft_root
+    elif os_name == "Darwin":
+        mc_root = "$HOME/Library/Application Support/minecraft"
+    elif os_name == "Linux":
+        mc_root = "$HOME/.minecraft"
+    else:
+        mc_root = "%USERPROFILE%\\.minecraft"
+
+    if os_name in ("Darwin", "Linux"):
+        # === macOS/Linux 生成 .sh 脚本 ===
+        open_cmd = "open" if os_name == "Darwin" else "xdg-open"
+        script_content = f"""#!/bin/bash
+# MC全生态智能适配工程师 - 环境搭建脚本
+# MC版本: {mc_version} | Java: {java_ver_display} | 启动器: {launcher_name}
+# 系统: {os_name}
+
+echo "============================================================"
+echo " MC环境搭建辅助脚本"
+echo " MC版本: {mc_version} | Java: {java_ver_display} | 启动器: {launcher_name}"
+echo "============================================================"
+echo ""
+
+echo "[1/4] 创建目录结构..."
+mkdir -p "{mc_root}/mods"
+mkdir -p "{mc_root}/saves"
+mkdir -p "{mc_root}/resourcepacks"
+echo " 目录创建完成"
+echo ""
+
+echo "[2/4] 打开Java下载页面..."
+{open_cmd} "{java_download_url}" &
+echo " 请在浏览器中下载并安装 Java {java_ver_display}"
+echo ""
+
+echo "[3/4] 打开启动器下载页面..."
+{open_cmd} "{launcher_download_url}" &
+echo " 请在浏览器中下载并安装 {launcher_name}"
+echo ""
+
+echo "[4/4] 打开.minecraft目录..."
+if [ "{os_name}" = "Darwin" ]; then
+    open "{mc_root}"
+else
+    xdg-open "{mc_root}"
+fi
+echo ""
+
+echo "============================================================"
+echo " 下一步操作:"
+echo " 1. 安装下载的 Java {java_ver_display}"
+echo " 2. 安装下载的 {launcher_name} 启动器"
+echo " 3. 打开 {launcher_name}，添加MC版本 {mc_version}"
+echo " 4. 将模组JAR文件放入 {mc_root}/mods 目录"
+echo " 5. 启动游戏，确认运行正常"
+echo "============================================================"
+"""
+        return script_content
+
+    else:
+        # === Windows 生成 .bat 脚本（原逻辑）===
+        bat_content = f"""@echo off
 chcp 65001 >nul
 title MC全生态智能适配工程师 - 环境搭建脚本
 echo ============================================================
@@ -427,7 +535,13 @@ echo ============================================================
 echo.
 pause
 """
-    return bat_content
+        return bat_content
+
+
+# 兼容别名（保留旧函数名，外部调用者可能还在用）
+def generate_install_bat(launcher, mc_version, java_ver, launcher_download_url, os_name="Windows", minecraft_root=""):
+    """已弃用，请使用 generate_install_script()"""
+    return generate_install_script(launcher, mc_version, java_ver, launcher_download_url, os_name, minecraft_root)
 
 
 def generate_setup_html(
@@ -559,11 +673,17 @@ def generate_setup_html(
     content += gen.render_section("安装步骤", steps_html, tag="steps")
     content += netease_warning
 
-    # 脚本下载提示
+    # 脚本下载提示（跨平台）
+    os_name = system_info.get("os", "Windows")
+    if os_name in ("Darwin", "Linux"):
+        script_file = f"install_{lc['launcher']}.sh"
+        script_action = "在终端中执行 <code>bash " + script_file + "</code> 即可自动创建目录结构和打开下载页面"
+    else:
+        script_file = f"install_{lc['launcher']}.bat"
+        script_action = "双击即可自动创建目录结构和打开下载页面"
     tip_html = gen.render_callout(
         "辅助脚本",
-        f"<p>已生成辅助安装脚本 <code>install_{lc['launcher']}.bat</code>，"
-        "双击即可自动创建目录结构和打开下载页面。</p>",
+        f"<p>已生成辅助安装脚本 <code>{script_file}</code>，{script_action}。</p>",
         level="info",
     )
     content += tip_html
@@ -632,24 +752,33 @@ def run(args) -> Dict[str, Any]:
         launcher, mc_version, loader, device, system_info
     )
 
-    # 6. 生成安装脚本
-    install_bat = generate_install_bat(
+    # 6. 生成安装脚本（跨平台）
+    os_name = system_info.get("os", "Windows")
+    mc_root_str = launcher_config.get("game_dirs", {}).get("minecraft_root", "")
+    install_script = generate_install_script(
         launcher,
         mc_version,
         java_rec["recommended_java"],
         launcher_config["launcher_download_url"],
+        os_name=os_name,
+        minecraft_root=mc_root_str,
     )
 
-    # 保存脚本
+    # 保存脚本（按OS选扩展名）
     output_dir = config.REPORTS_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
-    bat_path = output_dir / f"install_{launcher}.bat"
-    bat_path.write_text(install_bat, encoding="utf-8")
-    logger.info(f"安装脚本已保存: {bat_path}")
+    if os_name in ("Darwin", "Linux"):
+        script_ext = ".sh"
+    else:
+        script_ext = ".bat"
+    script_path = output_dir / f"install_{launcher}{script_ext}"
+    # Windows 用 utf-8，sh 用 utf-8 无 BOM
+    script_path.write_text(install_script, encoding="utf-8")
+    logger.info(f"安装脚本已保存: {script_path} (OS={os_name})")
 
     # 7. 生成HTML教程
     html_content = generate_setup_html(
-        system_info, java_rec, java_match, launcher_config, install_bat
+        system_info, java_rec, java_match, launcher_config, install_script
     )
 
     # 8. 输出结果
@@ -658,7 +787,7 @@ def run(args) -> Dict[str, Any]:
         "java_recommendation": java_rec,
         "java_match": java_match,
         "launcher_config": launcher_config,
-        "install_script": str(bat_path),
+        "install_script": str(script_path),
     }
 
     output_files = generate_unified_output(
@@ -676,10 +805,10 @@ def run(args) -> Dict[str, Any]:
         warnings=warnings,
     )
 
-    # 额外添加bat脚本路径
+    # 额外添加脚本路径
     if output_files.get("extra_files") is None:
         output_files["extra_files"] = {}
-    output_files["extra_files"]["install_script"] = str(bat_path)
+    output_files["extra_files"]["install_script"] = str(script_path)
 
     return config.build_result(
         feature="env_builder",

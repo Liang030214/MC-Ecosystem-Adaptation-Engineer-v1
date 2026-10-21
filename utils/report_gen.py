@@ -381,6 +381,13 @@ class ReportGenerator:
             '</html>'
         )
 
+    def _render_template(self, **kwargs) -> str:
+        """安全渲染模板（用 replace 替代 format，避免 CSS 的 {--bg} 被误解析）"""
+        result = self._base_template
+        for key, value in kwargs.items():
+            result = result.replace("{" + key + "}", str(value))
+        return result
+
     def _generate_filename(self, suffix: str, mod_name: str = "") -> str:
         """生成文件名
 
@@ -490,7 +497,7 @@ class ReportGenerator:
         status_html = parts[1]
         footer_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        html_doc = self._base_template.format(
+        html_doc = self._render_template(
             title=html.escape(title),
             title_escaped=html.escape(title),
             feature_escaped=html.escape(self.feature),
@@ -527,7 +534,7 @@ class ReportGenerator:
         """
         ts = timestamp or datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        html_doc = self._base_template.format(
+        html_doc = self._render_template(
             title=html.escape(title),
             title_escaped=html.escape(title),
             feature_escaped=html.escape(self.feature),

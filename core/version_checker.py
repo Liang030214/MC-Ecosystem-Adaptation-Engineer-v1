@@ -165,9 +165,16 @@ def _fetch_remote_info(check_url: str) -> Optional[Dict[str, Any]]:
         logger.info("[版本检测] 检查URL为占位符，跳过联网检测")
         return None
 
+    # V1.0.5 修复：离线模式下跳过版本检查
+    from config import OFFLINE_MODE
+    if OFFLINE_MODE:
+        logger.info("[版本检测] 离线模式，跳过联网版本检查")
+        return None
+
     try:
         import urllib.request
         import urllib.error
+        import ssl  # V1.0.5 修复：显式 SSL 上下文
 
         req = urllib.request.Request(
             check_url,
@@ -176,7 +183,7 @@ def _fetch_remote_info(check_url: str) -> Optional[Dict[str, Any]]:
                 "Accept": "application/json",
             },
         )
-        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT, context=ssl.create_default_context()) as resp:
             body = resp.read().decode("utf-8")
             data = json.loads(body)
             # 基本字段校验

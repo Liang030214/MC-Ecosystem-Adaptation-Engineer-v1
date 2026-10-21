@@ -20,6 +20,13 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.error import URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+import ssl
+
+# V1.0.5 修复：显式 SSL 上下文，避免依赖 Python 默认行为
+_SSL_CONTEXT = ssl.create_default_context()
+
+# V1.0.5 修复：离线模式下跳过所有联网调用
+from config import OFFLINE_MODE
 
 logger = logging.getLogger(__name__)
 
@@ -131,6 +138,11 @@ def _http_get(url: str, headers: Optional[Dict] = None) -> Tuple[int, Any]:
     Returns:
         (status_code, response_data) 元组；出错返回 (0, None)
     """
+    # V1.0.5 修复：离线模式下直接跳过联网调用
+    if OFFLINE_MODE:
+        logger.info(f"[离线模式] 跳过网络请求: {url}")
+        return 0, None
+
     default_headers = {
         "User-Agent": "MC-Skill/1.0 (crash-analyzer)",
         "Accept": "application/json",
@@ -141,7 +153,7 @@ def _http_get(url: str, headers: Optional[Dict] = None) -> Tuple[int, Any]:
 
     req = Request(url, headers=default_headers)
     try:
-        with urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+        with urlopen(req, timeout=REQUEST_TIMEOUT, context=_SSL_CONTEXT) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             return resp.status, data
     except URLError as e:

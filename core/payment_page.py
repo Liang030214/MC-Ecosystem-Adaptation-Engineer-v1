@@ -9,12 +9,20 @@ V1.0.3: 实现三级渐进式付费引导
 """
 
 import json
+import os
 import base64
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
 from core.i18n import t
+
+# 支付页面 JS 请求的服务端地址（与 auth_manager.AUTH_SERVER_URL 共用同一环境变量）
+_PAYMENT_SERVER_URL = (
+    os.environ.get("MC_SKILL_SERVER_URL")
+    or os.environ.get("MC_AUTH_SERVER_URL")
+    or "http://45.76.179.12"
+).rstrip("/")
 
 # === 资源目录 ===
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -201,8 +209,8 @@ _SUBSCRIPTION_PLANS = {
 _PAYMENT_NOTICES = {
     "auto_unlock": "✅ 付款完成后 30 分钟内自动解锁相关套餐",
     "auto_unlock_en": "✅ Access unlocked within 30 minutes after payment",
-    "must_click_complete": "⚠️ 付款后请务必点击下方「✅ 我已付款，等待验证」按钮，否则系统无法确认您的付款，可能导致支付失败",
-    "must_click_complete_en": "⚠️ After paying, you MUST click the '✅ Paid, Verify Now' button below. Otherwise the system cannot confirm your payment, which may result in payment failure",
+    "must_click_complete": "💡 PayPal 付款后系统自动验证开通；微信/支付宝付款后请点击下方「✅ 我已付款，等待验证」按钮",
+    "must_click_complete_en": "💡 PayPal payments are auto-verified; for WeChat/Alipay, click '✅ Paid, Verify Now' after paying",
     "no_duplicate_pay": "⚠️ 同一套餐付款成功后 24 小时内请勿重复支付，否则会导致系统数据错乱",
     "no_duplicate_pay_en": "⚠️ Do not pay for the same plan again within 24 hours after a successful payment, otherwise it may cause system data confusion",
     "contact_if_not_work": "✅ 如付款后未生效，请保存支付截图联系客服",
@@ -256,8 +264,8 @@ _I18N_TEXTS = {
     "product_name": ("商品名称", "Product"),
     "amount_due": ("应付金额", "Amount Due"),
     "select_payment_method": ("选择支付方式", "Select Payment Method"),
-    "other_payment": ("🔽 其他支付方式（银行卡、云闪付、数字人民币、PayPal 等）",
-                      "🔽 Other Payment Methods (Bank Card, UnionPay, Digital CNY, PayPal, etc.)"),
+    "other_payment": ("🔽 其他支付方式（银行卡、云闪付、数字人民币、抖音支付 等）",
+                      "🔽 Other Payment Methods (Bank Card, UnionPay, Digital CNY, DouyinPay, etc.)"),
     "collapse_other": ("🔼 收起其他支付方式", "🔼 Collapse Other Methods"),
     "more_options": ("更多支付选项", "More Payment Options"),
     "scan_qr": ("请打开对应 APP 扫码付款", "Open the app to scan QR code"),
@@ -378,6 +386,8 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
     color: #333; min-height: 100vh; padding: 20px;
     display: flex; align-items: center; justify-content: center;
+    opacity: 0;               /* ← 默认隐藏，等 switchLang 执行完再淡入 */
+    transition: opacity 0.15s ease-out;
   }}
   .container {{
     position: relative;
@@ -477,6 +487,15 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
   .plan-price-quarterly {{ color: #ff9800; }}
   .plan-price-yearly {{ color: #9c27b0; }}
   .plan-unit {{ font-size: 11px; color: #999; }}
+  .plan-benefit {{ font-size: 11px; color: #555; margin-top: 6px; line-height: 1.5; }}
+  .plan-benefit-premium {{ color: #7b1fa2; font-weight: 500; }}
+  .plan-badge-premium {{
+    position: absolute; top: -8px; right: 12px;
+    background: linear-gradient(135deg, #7b1fa2, #e91e63);
+    color: #fff; font-size: 10px; font-weight: 600;
+    padding: 2px 8px; border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(123,31,162,0.3);
+  }}
 
   /* Payment */
   .payment-order {{
@@ -795,6 +814,7 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
             <div class="plan-unit" data-i18n-zh="元/月" data-i18n-en="/month">元/月</div>
           </div>
         </div>
+        <div class="plan-benefit" data-i18n-zh="普通会员权益：全自动100次/日 · 半自动50次/日 · 移植5次/日" data-i18n-en="Normal tier: Auto 100/d · Semi 50/d · Migrate 5/d">普通会员权益：全自动100次/日 · 半自动50次/日 · 移植5次/日</div>
       </div>
 
       <div class="plan-item plan-quarterly" onclick="selectPlan('quarterly')">
@@ -809,19 +829,22 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
             <div class="plan-unit" data-i18n-zh="元/季" data-i18n-en="/quarter">元/季</div>
           </div>
         </div>
+        <div class="plan-benefit" data-i18n-zh="普通会员权益：全自动100次/日 · 半自动50次/日 · 移植5次/日" data-i18n-en="Normal tier: Auto 100/d · Semi 50/d · Migrate 5/d">普通会员权益：全自动100次/日 · 半自动50次/日 · 移植5次/日</div>
       </div>
 
       <div class="plan-item plan-yearly" onclick="selectPlan('yearly')">
+        <div class="plan-badge-premium" data-i18n-zh="✨ 年卡专属 PREMIUM" data-i18n-en="✨ Yearly Exclusive PREMIUM">✨ 年卡专属 PREMIUM</div>
         <div class="plan-row">
           <div>
             <div class="plan-name" data-i18n-zh="年度会员" data-i18n-en="Yearly">年度会员</div>
-            <div class="plan-desc" data-i18n-zh="全年无忧，最优惠方案" data-i18n-en="Best value for long-term">全年无忧，最优惠方案</div>
+            <div class="plan-desc" data-i18n-zh="PREMIUM 最高等级 · 4项专属特权" data-i18n-en="PREMIUM Tier · 4 Exclusive Perks">PREMIUM 最高等级 · 4项专属特权</div>
           </div>
           <div style="text-align:right;">
             <div class="plan-price plan-price-yearly" id="planPriceYearly">¥88.88</div>
             <div class="plan-unit" data-i18n-zh="元/年" data-i18n-en="/year">元/年</div>
           </div>
         </div>
+        <div class="plan-benefit plan-benefit-premium" data-i18n-zh="全自动200次/日 · 半自动100次/日 · 移植10次/日<br>✅ 批量任务 ✅ 容量翻倍 ✅ 新功能抢先 ✅ 优先队列" data-i18n-en="Auto 200/d · Semi 100/d · Migrate 10/d<br>✅ Batch Jobs ✅ 2x Capacity ✅ Early Access ✅ Priority Queue">全自动200次/日 · 半自动100次/日 · 移植10次/日<br>✅ 批量任务 ✅ 容量翻倍 ✅ 新功能抢先 ✅ 优先队列</div>
       </div>
     </div>
 
@@ -930,7 +953,7 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
 
     <!-- 其他支付入口 -->
     <div class="other-payment-entry" id="otherEntry" onclick="toggleOtherPayment()">
-      <span class="other-payment-entry-text" data-i18n-zh="🔽 <strong>其他支付方式</strong>（银行卡、云闪付、数字人民币、PayPal 等）" data-i18n-en="🔽 <strong>Other Payment Methods</strong> (Bank Card, UnionPay, Digital CNY, PayPal, etc.)">🔽 <strong>其他支付方式</strong>（银行卡、云闪付、数字人民币、PayPal 等）</span>
+      <span class="other-payment-entry-text" data-i18n-zh="🔽 <strong>其他支付方式</strong>（银行卡、云闪付、数字人民币、抖音支付 等）" data-i18n-en="🔽 <strong>Other Payment Methods</strong> (Bank Card, UnionPay, Digital CNY, DouyinPay, etc.)">🔽 <strong>其他支付方式</strong>（银行卡、云闪付、数字人民币、抖音支付 等）</span>
     </div>
 
     <!-- 其他支付渠道 - 默认隐藏 -->
@@ -1133,8 +1156,11 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
   }});
   
   // ============ 支付操作监控系统 ============
-  const SERVER_URL = 'http://localhost:8000';
+  const SERVER_URL = '{_PAYMENT_SERVER_URL}';
   let qrOpenedAt = null;  // QR码打开时间戳
+  let currentOrderId = null;  // 当前待验证订单ID（PayPal选渠道时自动创建）
+  let orderTimeoutTimer = null;  // 订单30分钟超时定时器
+  const ORDER_TIMEOUT_MS = 30 * 60 * 1000;  // 订单有效期：30分钟
   // 生成唯一会话ID：用于后端聚合完整付费流程日志
   const PAYMENT_SESSION_ID = 'pay-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
 
@@ -1184,36 +1210,41 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
   
   // 页面加载完成后初始化
   window.addEventListener('DOMContentLoaded', function() {{
-    // 初始化语言：先恢复用户偏好，再检测浏览器语言
+    // 语言检测优先级（统一规则，与 lookup 页一致）：
+    //   1) URL query ?lang=xxx （跨页面跳转传递，优先级最高）
+    //   2) localStorage.mc_skill_lang （用户手动选择的持久偏好）
+    //   3) navigator.language （浏览器语言）
+    //   4) fallback zh_cn
+    let detectedLang = null;
     try {{
-      const savedLang = localStorage.getItem('mc_skill_lang');
-      if (savedLang && SUPPORTED_LANGUAGES[savedLang]) {{
-        currentLang = savedLang;
-      }} else {{
-        // 检测浏览器语言
+      // 1) URL 参数（跨页跳转传进来的）
+      const urlLang = new URLSearchParams(window.location.search).get('lang');
+      if (urlLang && SUPPORTED_LANGUAGES[urlLang]) {{
+        detectedLang = urlLang;
+      }}
+      // 2) localStorage 持久偏好
+      if (!detectedLang) {{
+        const savedLang = localStorage.getItem('mc_skill_lang');
+        if (savedLang && SUPPORTED_LANGUAGES[savedLang]) {{
+          detectedLang = savedLang;
+        }}
+      }}
+      // 3) 浏览器语言
+      if (!detectedLang) {{
         const browserLang = (navigator.language || 'zh').toLowerCase();
         const langMap = {{
-          'zh': 'zh_cn',
-          'zh-cn': 'zh_cn',
-          'zh-tw': 'zh_tw',
-          'zh-hk': 'zh_tw',
-          'ja': 'ja_jp',
-          'ko': 'ko_kr',
-          'ru': 'ru_ru',
-          'es': 'es_es',
-          'it': 'it_it',
-          'el': 'el_gr',
-          'th': 'th_th',
-          'hi': 'hi_in',
-          'en': 'en_us',
-          'en-us': 'en_us',
-          'en-gb': 'en_us'
+          'zh': 'zh_cn', 'zh-cn': 'zh_cn', 'zh-tw': 'zh_tw', 'zh-hk': 'zh_tw',
+          'ja': 'ja_jp', 'ko': 'ko_kr', 'ru': 'ru_ru', 'es': 'es_es', 'it': 'it_it',
+          'el': 'el_gr', 'th': 'th_th', 'hi': 'hi_in',
+          'ar': 'ar_sa', 'ar-sa': 'ar_sa', 'ar-eg': 'ar_sa', 'ar-bh': 'ar_sa', 'ar-kw': 'ar_sa',
+          'en': 'en_us', 'en-us': 'en_us', 'en-gb': 'en_us', 'en-au': 'en_us', 'en-ca': 'en_us'
         }};
-        currentLang = langMap[browserLang] || 'zh_cn';
+        detectedLang = langMap[browserLang] || 'zh_cn';
       }}
     }} catch(e) {{
-      currentLang = 'zh_cn';
+      detectedLang = 'zh_cn';
     }}
+    currentLang = detectedLang;
     
     // 初始化语言下拉菜单
     initLangDropdown();
@@ -1242,6 +1273,62 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
       return duration;
     }}
     return 0;
+  }}
+
+  // ============ 订单管理（PayPal自动建单 + 30分钟超时）============
+  function startOrderTimeout() {{
+    clearOrderTimeout();
+    orderTimeoutTimer = setTimeout(() => {{
+      // 30分钟超时：取消订单 + 关闭支付页面 + 提示
+      cancelPendingOrder('timeout');
+      showToast2(getText('⏰ 支付超时，二维码已失效，请重新选择', '⏰ Payment timed out, QR expired, please reselect'), 5000);
+      closePayment();
+    }}, ORDER_TIMEOUT_MS);
+  }}
+
+  function clearOrderTimeout() {{
+    if (orderTimeoutTimer) {{
+      clearTimeout(orderTimeoutTimer);
+      orderTimeoutTimer = null;
+    }}
+  }}
+
+  async function cancelPendingOrder(reason) {{
+    clearOrderTimeout();
+    if (!currentOrderId) return;
+    const plan = selectedPlan || '';
+    const channel = currentChannel || '';
+    currentOrderId = null;
+    try {{
+      await reportPaymentAction('order_cancelled', {{
+        plan: plan,
+        channel: channel,
+        note: reason
+      }});
+    }} catch (e) {{
+      console.log('[订单取消] 上报失败:', reason);
+    }}
+  }}
+
+  async function createPayPalOrder() {{
+    // 选择PayPal渠道时自动创建待验证订单，供webhook匹配
+    if (!selectedPlan || currentChannel !== 'paypal') return;
+    const plan = plans[selectedPlan];
+    try {{
+      const result = await reportPaymentAction('order_created', {{
+        plan: selectedPlan,
+        channel: 'paypal',
+        amount: plan.price,
+        product_name: plan.product
+      }});
+      if (result && result.order_id) {{
+        currentOrderId = result.order_id;
+        startOrderTimeout();
+        console.log('[PayPal自动建单] 订单已创建:', currentOrderId);
+      }}
+    }} catch (e) {{
+      console.log('[PayPal自动建单] 失败:', e);
+    }}
   }}
   // ============ 监控系统结束 ============
 
@@ -1528,12 +1615,12 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
       "ar_sa": "المبلغ المستحق"
     }},
     // 其他支付方式
-    "🔽 <strong>其他支付方式</strong>（银行卡、云闪付、数字人民币、PayPal 等）": {{
-      "zh_cn": "🔽 <strong>其他支付方式</strong>（银行卡、云闪付、数字人民币、PayPal 等）", "en_us": "🔽 <strong>Other Payment Methods</strong> (Bank Card, UnionPay, Digital CNY, PayPal, etc.)", "zh_tw": "🔽 <strong>其他支付方式</strong>（銀行卡、雲閃付、數字人民幣、PayPal 等）",
-      "ja_jp": "🔽 <strong>その他のお支払い方法</strong>（銀行カード、UnionPay、デジタル人民元、PayPal など）", "ko_kr": "🔽 <strong>기타 결제 수단</strong> (은행 카드, UnionPay, 디지털 위안화, PayPal 등)", "ru_ru": "🔽 <strong>Другие способы оплаты</strong> (Банковская карта, UnionPay, Цифровой юань, PayPal и др.)",
-      "es_es": "🔽 <strong>Otros métodos de pago</strong> (Tarjeta bancaria, UnionPay, Yuan digital, PayPal, etc.)", "it_it": "🔽 <strong>Altri metodi di pagamento</strong> (Carta bancaria, UnionPay, Yuan digitale, PayPal, ecc.)", "el_gr": "🔽 <strong>Άλλοι τρόποι πληρωμής</strong> (Τραπεζική κάρτα, UnionPay, Ψηφιακός Γιουάν, PayPal, κ.λπ.)",
-      "th_th": "🔽 <strong>วิธีการชำระเงินอื่นๆ</strong> (บัตรธนาคาร, UnionPay, หยวนดิจิทัล, PayPal ฯลฯ)", "hi_in": "🔽 <strong>अन्य भुगतान विधियाँ</strong> (बैंक कार्ड, UnionPay, डिजिटल युआन, PayPal, आदि)",
-      "ar_sa": "🔽 <strong>طرق دفع أخرى</strong> (البطاقة المصرفية، UnionPay، اليوان الرقمي، PayPal، وغيرها)"
+    "🔽 <strong>其他支付方式</strong>（银行卡、云闪付、数字人民币、抖音支付 等）": {{
+      "zh_cn": "🔽 <strong>其他支付方式</strong>（银行卡、云闪付、数字人民币、抖音支付 等）", "en_us": "🔽 <strong>Other Payment Methods</strong> (Bank Card, UnionPay, Digital CNY, DouyinPay, etc.)", "zh_tw": "🔽 <strong>其他支付方式</strong>（銀行卡、雲閃付、數字人民幣、抖音支付 等）",
+      "ja_jp": "🔽 <strong>その他のお支払い方法</strong>（銀行カード、UnionPay、デジタル人民元、DouyinPay など）", "ko_kr": "🔽 <strong>기타 결제 수단</strong> (은행 카드, UnionPay, 디지털 위안화, DouyinPay 등)", "ru_ru": "🔽 <strong>Другие способы оплаты</strong> (Банковская карта, UnionPay, Цифровой юань, DouyinPay и др.)",
+      "es_es": "🔽 <strong>Otros métodos de pago</strong> (Tarjeta bancaria, UnionPay, Yuan digital, DouyinPay, etc.)", "it_it": "🔽 <strong>Altri metodi di pagamento</strong> (Carta bancaria, UnionPay, Yuan digitale, DouyinPay, ecc.)", "el_gr": "🔽 <strong>Άλλοι τρόποι πληρωμής</strong> (Τραπεζική κάρτα, UnionPay, Ψηφιακός Γιουάν, DouyinPay, κ.λπ.)",
+      "th_th": "🔽 <strong>วิธีการชำระเงินอื่นๆ</strong> (บัตรธนาคาร, UnionPay, หยวนดิจิทัล, DouyinPay ฯลฯ)", "hi_in": "🔽 <strong>अन्य भुगतान विधियाँ</strong> (बैंक कार्ड, UnionPay, डिजिटल युआन, DouyinPay, आदि)",
+      "ar_sa": "🔽 <strong>طرق دفع أخرى</strong> (البطاقة المصرفية، UnionPay، اليوان الرقمي، DouyinPay، وغيرها)"
     }},
     // 更多支付选项
     "更多支付选项": {{
@@ -1802,20 +1889,20 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
       "th_th": "✅ ข้อกำหนด: สำหรับใช้ส่วนตัวเท่านั้น ห้ามนำไปขายต่อ", "hi_in": "✅ शर्तें: लाइसेंस केवल व्यक्तिगत उपयोग के लिए, पुनर्विक्रय निषिद्ध",
       "ar_sa": "✅ الشروط: الترخيص للاستخدام الشخصي فقط، يمنع إعادة البيع"
     }},
-    // ===== 强制点击付款完成按钮警告 =====
-    "⚠️ 付款后请务必点击下方「✅ 我已付款，等待验证」按钮，否则系统无法确认您的付款，可能导致支付失败": {{
-      "zh_cn": "⚠️ 付款后请务必点击下方「✅ 我已付款，等待验证」按钮，否则系统无法确认您的付款，可能导致支付失败",
-      "en_us": "⚠️ After paying, you MUST click the '✅ Paid, Verify Now' button below. Otherwise the system cannot confirm your payment, which may result in payment failure",
-      "zh_tw": "⚠️ 付款後請務必點擊下方「✅ 我已付款，等待驗證」按鈕，否則系統無法確認您的付款，可能導致支付失敗",
-      "ja_jp": "⚠️ 支払い後、下の「✅ 支払い完了、確認待ち」ボタンを必ずクリックしてください。クリックしないとシステムが支払いを確認できず、支払い失敗となる可能性があります",
-      "ko_kr": "⚠️ 결제 후 아래의 '✅ 결제 완료, 확인 대기' 버튼을 반드시 클릭하세요. 클릭하지 않으면 시스템이 결제를 확인할 수 없어 결제 실패가 발생할 수 있습니다",
-      "ru_ru": "⚠️ После оплаты ОБЯЗАТЕЛЬНО нажмите кнопку '✅ Платеж выполнен, ожидайте проверки' ниже. Иначе система не сможет подтвердить ваш платёж, что может привести к ошибке оплаты",
-      "es_es": "⚠️ Después de pagar, DEBE hacer clic en el botón '✅ Pagado, verificar ahora' a continuación. De lo contrario, el sistema no puede confirmar su pago, lo que puede provocar un fallo del pago",
-      "it_it": "⚠️ Dopo il pagamento, DEVI cliccare il pulsante '✅ Pagato, verifica ora' qui sotto. Altrimenti il sistema non può confermare il pagamento, il che potrebbe causare un fallimento del pagamento",
-      "el_gr": "⚠️ Μετά την πληρωμή, ΠΡΕΠΕΙ να κάνετε κλικ στο κουμπί '✅ Πληρωμή ολοκληρώθηκε, περιμένετε επαλήθευση' παρακάτω. Διαφορετικά το σύστημα δεν μπορεί να επιβεβαιώσει την πληρωμή σας, κάτι που μπορεί να οδηγήσει σε αποτυχία",
-      "th_th": "⚠️ หลังชำระเงิน กรุณาคลิกปุ่ม '✅ ชำระแล้ว รอการยืนยัน' ด้านล่างนี้เสมอ มิฉะนั้นระบบจะยืนยันการชำระเงินไม่ได้ อาจทำให้การชำระล้มเหลว",
-      "hi_in": "⚠️ भुगतान के बाद, नीचे दिए गए '✅ भुगतान किया, सत्यापित करें' बटन पर अवश्य क्लिक करें। अन्यथा सिस्टम आपके भुगतान की पुष्टि नहीं कर सकता, जिससे भुगतान विफल हो सकता है",
-      "ar_sa": "⚠️ بعد الدفع، يجب عليك النقر على زر «✅ تم الدفع، تحقق الآن» أدناه. وإلا فلن يتمكن النظام من تأكيد دفعتك، مما قد يؤدي إلى فشل الدفع"
+    // ===== 付款提示（PayPal自动验证，微信/支付宝需点按钮）=====
+    "💡 PayPal 付款后系统自动验证开通；微信/支付宝付款后请点击下方「✅ 我已付款，等待验证」按钮": {{
+      "zh_cn": "💡 PayPal 付款后系统自动验证开通；微信/支付宝付款后请点击下方「✅ 我已付款，等待验证」按钮",
+      "en_us": "💡 PayPal payments are auto-verified; for WeChat/Alipay, click '✅ Paid, Verify Now' after paying",
+      "zh_tw": "💡 PayPal 付款後系統自動驗證開通；微信/支付寶付款後請點擊下方「✅ 我已付款，等待驗證」按鈕",
+      "ja_jp": "💡 PayPal 支払いはシステムが自動検証して開通します；WeChat/Alipay 支払い後は下の「✅ 支払い完了、確認待ち」ボタンをクリックしてください",
+      "ko_kr": "💡 PayPal 결제는 시스템이 자동 검증하여 개통됩니다；WeChat/Alipay 결제 후 아래의 '✅ 결제 완료, 확인 대기' 버튼을 클릭하세요",
+      "ru_ru": "💡 Платежи PayPal автоматически проверяются системой；для WeChat/Alipay нажмите кнопку '✅ Платеж выполнен, ожидайте проверки' после оплаты",
+      "es_es": "💡 Los pagos de PayPal se verifican automáticamente；para WeChat/Alipay, haga clic en '✅ Pagado, verificar ahora' después de pagar",
+      "it_it": "💡 I pagamenti PayPal sono verificati automaticamente；per WeChat/Alipay, clicca su '✅ Pagato, verifica ora' dopo il pagamento",
+      "el_gr": "💡 Οι πληρωμές PayPal επαληθεύονται αυτόματα；για WeChat/Alipay, κάντε κλικ στο '✅ Πληρωμή ολοκληρώθηκε, περιμένετε επαλήθευση' μετά την πληρωμή",
+      "th_th": "💡 การชำระเงิน PayPal จะถูกระบบตรวจสอบและเปิดใช้งานอัตโนมัติ；สำหรับ WeChat/Alipay ให้คลิกปุ่ม '✅ ชำระแล้ว รอการยืนยัน' หลังชำระเงิน",
+      "hi_in": "💡 PayPal भुगतान स्वचालित रूप से सत्यापित होते हैं；WeChat/Alipay के लिए, भुगतान के बाद '✅ भुगतान किया, सत्यापित करें' बटन पर क्लिक करें",
+      "ar_sa": "💡 تتم التحقق من مدفوعات PayPal تلقائيًا；بالنسبة لـ WeChat/Alipay، انقر على «✅ تم الدفع، تحقق الآن» بعد الدفع"
     }},
     // ===== 禁止重复支付警告 =====
     "⚠️ 同一套餐付款成功后 24 小时内请勿重复支付，否则会导致系统数据错乱": {{
@@ -1957,6 +2044,9 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
     try {{
       localStorage.setItem('mc_skill_lang', lang);
     }} catch(e) {{}}
+
+    // 最后：所有 DOM 更新完，淡入显示（避免 FOUC —— Flash of Untranslated Content）
+    document.body.style.opacity = '1';
   }}
 
   function updatePlanCardPrices() {{
@@ -2063,6 +2153,10 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
   function selectPlan(planKey) {{
     const plan = plans[planKey];
     if (!plan) return;
+    // 切换套餐时：取消之前未完成的订单
+    if (currentOrderId) {{
+      cancelPendingOrder('plan_switched');
+    }}
     selectedPlan = planKey;
     updatePlanDisplay();
     renderMainChannels();
@@ -2092,21 +2186,16 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
     if (!plan) return;
     document.getElementById('orderProduct').textContent = getText(plan.product, plan.product_en);
     
-    // 货币显示规则（含语言 + 渠道双重判断）：
+    // 货币显示规则（仅按语言判断，不区分渠道）：
     // 1. 简体中文（zh_cn）：所有渠道都用 ¥ + 人民币金额
-    // 2. 其他所有语言：
-    //    - PayPal 渠道：用 $ + 美元金额
-    //    - WeChat / AliPay 渠道：用 ¥ 符号 + 美元金额数字（打消海外用户疑虑，明确对应人民币收款）
+    // 2. 其他所有语言：所有渠道都用 $ + 美元金额
     const usdAmount = plan.price_usd || plan.price;
     if (isChineseLang(currentLang)) {{
       // 简体中文模式：统一人民币
       document.getElementById('orderPrice').textContent = '¥' + plan.price;
-    }} else if (currentChannel === 'paypal') {{
-      // 非中文 + PayPal：美元符号 + 美元金额
-      document.getElementById('orderPrice').textContent = '$' + usdAmount;
     }} else {{
-      // 非中文 + WeChat/AliPay：人民币符号 + 美元金额数字
-      document.getElementById('orderPrice').textContent = '¥' + usdAmount;
+      // 非中文模式：统一美元
+      document.getElementById('orderPrice').textContent = '$' + usdAmount;
     }}
   }}
 
@@ -2171,8 +2260,8 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
         getText('🔼 <strong>收起其他支付方式</strong>', '🔼 <strong>Collapse Other Methods</strong>');
     }} else {{
       entry.querySelector('.other-payment-entry-text').innerHTML = 
-        getText('🔽 <strong>其他支付方式</strong>（银行卡、云闪付、数字人民币、PayPal 等）', 
-                '🔽 <strong>Other Payment Methods</strong> (Bank Card, UnionPay, Digital CNY, PayPal, etc.)');
+        getText('🔽 <strong>其他支付方式</strong>（银行卡、云闪付、数字人民币、抖音支付 等）',
+                '🔽 <strong>Other Payment Methods</strong> (Bank Card, UnionPay, Digital CNY, DouyinPay, etc.)');
     }}
   }}
 
@@ -2206,7 +2295,12 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
     if (qrOpenedAt !== null) {{
       trackQrClosed();
     }}
-    
+
+    // 切换渠道时：取消之前未完成的订单（如从PayPal切到微信）
+    if (currentOrderId && currentChannel !== channelKey) {{
+      cancelPendingOrder('channel_switched');
+    }}
+
     currentChannel = channelKey;
     currentChannelType = channelType;
     const channels = channelType === 'pri' ? priChannels : otherChannels;
@@ -2306,7 +2400,9 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
       // PayPal渠道：同时显示付款链接（扫码失败时点击跳转）
       if (channelKey === 'paypal' && paypalPayLink) {{
         const linkText = getText('扫码失败？点击此处打开付款页', 'Scan failed? Click to open payment page');
-        payLinkEl.innerHTML = '<a href="' + paypalPayLink + '" target="_blank" style="color:#003087;font-weight:600;text-decoration:none;">🔗 ' + linkText + ' →</a>';
+        const scanHintText = getText('💡 提示：也可以使用微信或支付宝扫描二维码完成付款', '💡 Tip: You can also scan the QR code with WeChat or Alipay to pay');
+        payLinkEl.innerHTML = '<a href="' + paypalPayLink + '" target="_blank" style="color:#003087;font-weight:600;text-decoration:none;">🔗 ' + linkText + ' →</a>' +
+          '<div style="margin-top:10px;padding:8px 12px;background:#ecfdf5;border:1px solid #10b981;border-radius:6px;color:#059669;font-size:12px;font-weight:500;">' + scanHintText + '</div>';
         payLinkEl.style.display = 'block';
       }} else {{
         payLinkEl.innerHTML = '';
@@ -2331,12 +2427,21 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
       has_qr: hasQrImage,
       is_coming_soon: isComingSoon
     }});
+
+    // PayPal渠道：自动创建待验证订单（供webhook匹配），启动30分钟超时
+    if (channelKey === 'paypal' && !isComingSoon && hasQrImage) {{
+      createPayPalOrder();
+    }}
   }}
 
   function closePayment() {{
     // 关闭支付页面前，上报QR关闭事件（如果QR还在显示）
     if (qrOpenedAt !== null) {{
       trackQrClosed();
+    }}
+    // 关闭支付页面时取消未完成的订单
+    if (currentOrderId) {{
+      cancelPendingOrder('page_closed');
     }}
     document.getElementById('paymentModal').classList.remove('active');
   }}
@@ -2353,7 +2458,12 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
     
     const plan = plans[selectedPlan];
     const channel = currentChannel;
-    
+
+    // PayPal渠道：用户声称已付款，清除30分钟超时（订单等待webhook验证）
+    if (channel === 'paypal') {{
+      clearOrderTimeout();
+    }}
+
     // 确认付款时，先上报QR关闭事件（记录QR显示时长）
     if (qrOpenedAt !== null) {{
       trackQrClosed();
@@ -2395,7 +2505,7 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
         <div id="verifyIcon" style="font-size:48px;margin-bottom:16px;">⏳</div>
         <div id="verifyTitle" style="font-size:20px;font-weight:700;margin-bottom:12px;">${{getText('付款验证中', 'Payment Verification')}}...</div>
         <div id="verifyDesc" style="font-size:14px;color:#666;margin-bottom:20px;">
-          ${{getText('系统正在通过小微商户API验证您的付款，预计1-3分钟完成', 'System is verifying your payment via merchant API, please wait 1-3 minutes')}}
+          ${{getText('支付信息已提交，管理员核对到账后开通，通常 5 分钟内完成', 'Payment submitted. Access will be granted after admin confirmation, usually within 5 minutes')}}
         </div>
         <div style="background:#f5f5fa;border-radius:8px;padding:16px;margin-bottom:20px;text-align:left;">
           <div style="font-size:12px;color:#999;margin-bottom:8px;">${{getText('订单信息', 'Order Info')}}</div>
@@ -2404,7 +2514,7 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
           <div id="verifyStatus" style="font-size:12px;color:#1976d2;margin-top:8px;">${{getText('等待商户确认付款...', 'Waiting for merchant confirmation...')}}</div>
         </div>
         <div style="font-size:13px;color:#1976d2;margin-bottom:20px;">
-          ${{getText('💡 验证成功后权限将自动开通，无需重启Skill', '💡 Access will be auto-granted upon verification')}}
+          ${{getText('💡 您可以关闭此页面，半小时后重启 Skill，即可开通会员并生效', '💡 You may close this page. Restart the Skill in 30 minutes to activate your membership.')}}
         </div>
         <button onclick="document.getElementById('verificationModal').remove()" style="background:linear-gradient(90deg,#3a7bd5,#00d2ff);color:#fff;border:none;border-radius:8px;padding:12px 32px;font-size:14px;font-weight:600;cursor:pointer;">
           ${{getText('后台等待', 'Wait in Background')}}
@@ -2547,7 +2657,7 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
 
 def show_payment_page(reason: str = "", mode: str = "auto", machine_id: str = "") -> bool:
     """显示付费引导页面（渐进式）
-    
+
     Args:
         reason: 触发原因
         mode: 显示模式 (auto/manual)
@@ -2573,7 +2683,10 @@ def show_payment_page(reason: str = "", mode: str = "auto", machine_id: str = ""
         if reason:
             print(f"  📌 {reason}", flush=True)
         print(f"  📂 页面路径: {html_path}", flush=True)
-        print(f"\n  💡 每日仍有免费额度可用", flush=True)
+        if mode == "auto":
+            print(f"\n  💡 免费额度每日重置，明日可继续使用", flush=True)
+        else:
+            print(f"\n  💡 每日仍有免费额度可用", flush=True)
         print(f"  👉 查看订阅方案解锁更多权益", flush=True)
         print(f"{'='*50}", flush=True)
         return True
@@ -2582,5 +2695,209 @@ def show_payment_page(reason: str = "", mode: str = "auto", machine_id: str = ""
         return False
 
 
+# ==================== V1.0.5 版本过低升级提示页 ====================
+def show_version_upgrade_page(
+    user_version: str = "",
+    latest_version: str = "1.0.5",
+    grace_remaining_days: int = 0,
+    reason: str = "",
+    is_grace_period: bool = False,
+) -> bool:
+    """显示版本过低升级提示页面
+
+    适用场景：
+    - is_grace_period=False（锁死）：免费期已过 + 版本过低 → 完全锁死，弹此页
+    - is_grace_period=True（宽限期提醒）：版本处于上一版的30天宽限期内 →
+      不锁死，仅提醒升级，每周提醒一次
+
+    Args:
+        user_version: 用户当前客户端版本号
+        latest_version: 服务器声明的最新版本号
+        grace_remaining_days: 宽限期剩余天数（仅提示用）
+        reason: 服务器给出的可读原因
+        is_grace_period: True=宽限期内的提醒（不锁死），False=锁死页面
+    """
+    try:
+        _OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        # 多语言：优先使用 i18n 当前语言，失败则回退中文
+        try:
+            from core.i18n import t as _t, get_current_language
+            _lang = get_current_language()
+        except Exception:
+            _t = lambda k, **kw: k
+            _lang = "zh_cn"
+
+        html = _build_version_upgrade_html(
+            user_version=user_version,
+            latest_version=latest_version,
+            grace_remaining_days=grace_remaining_days,
+            reason=reason,
+            is_grace_period=is_grace_period,
+            t_func=_t,
+            lang=_lang,
+        )
+        html_path = _OUTPUT_DIR / "version_upgrade.html"
+        html_path.write_text(html, encoding="utf-8")
+        print(f"\n{'='*50}", flush=True)
+        if is_grace_period:
+            print(f"  📣 有新版本 {latest_version} 可用，建议尽快升级", flush=True)
+            if grace_remaining_days > 0:
+                print(f"  ⏳ 宽限期剩余 {grace_remaining_days} 天，到期后将停止服务", flush=True)
+        else:
+            print(f"  🚫 当前版本过低，已无法继续使用", flush=True)
+        if user_version:
+            print(f"  📌 您当前版本: {user_version}", flush=True)
+        if latest_version:
+            print(f"  ✨ 最新版本: {latest_version}", flush=True)
+        if reason:
+            print(f"  📖 {reason}", flush=True)
+        print(f"  📂 升级页面: {html_path}", flush=True)
+        print(f"\n  💡 升级到最新版后功能更全面、使用额度更多", flush=True)
+        print(f"{'='*50}", flush=True)
+        return True
+    except Exception as e:
+        print(f"[Error] 打开版本升级页面失败: {e}", flush=True)
+        return False
+
+
+# 各平台下载链接（V1.0.5 新增：升级提示页提供多平台一键跳转）
+_DOWNLOAD_URLS = {
+    "ClawHub": "https://clawhub.com/mc-ecosystem-skill",
+    "GitHub": "https://github.com/mc-skill/mc-skill",
+    "SkillHub": "https://skillhub.com/mc-ecosystem-skill",
+}
+
+
+def _build_version_upgrade_html(
+    user_version: str,
+    latest_version: str,
+    grace_remaining_days: int,
+    reason: str,
+    is_grace_period: bool = False,
+    t_func=None,
+    lang: str = "zh_cn",
+) -> str:
+    """构建版本过低升级提示页 HTML
+
+    Args:
+        is_grace_period: True=宽限期提醒页（橙色，不锁死），False=锁死页（红色）
+        t_func: i18n 翻译函数
+        lang: 当前语言代码
+    """
+    _t = t_func or (lambda k, **kw: k)
+    _u = user_version or "未知"
+    _l = latest_version or "1.0.5"
+    _r = reason or (f"当前版本 {_u} 过低，已无法继续使用，请升级到 {_l}"
+                    if not is_grace_period else
+                    f"检测到新版本 {_l}，建议尽快升级以获得更全面的功能和更多使用额度")
+    _grace = grace_remaining_days or 0
+    _now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # 根据 is_grace_period 切换配色：锁死=红色系，宽限期=橙色系
+    if is_grace_period:
+        _bg = "linear-gradient(135deg,#fff7ed 0%,#fed7aa 100%)"
+        _icon_bg = "#fff7ed"
+        _icon_color = "#ea580c"
+        _card_shadow = "0 20px 60px rgba(234,88,12,0.18)"
+        _title = "有新版本可用" if lang.startswith("zh") else "New Version Available"
+        _lead = ("您当前使用的是上一版本，仍可继续使用。"
+                 "新版本功能更加全面、使用额度更多，建议尽快升级。")
+        _btn_text = "前往升级" if lang.startswith("zh") else "Upgrade Now"
+        _icon = "📢"
+    else:
+        _bg = "linear-gradient(135deg,#fee2e2 0%,#fecaca 100%)"
+        _icon_bg = "#fef2f2"
+        _icon_color = "#dc2626"
+        _card_shadow = "0 20px 60px rgba(220,38,38,0.18)"
+        _title = "当前版本过低，已无法再使用" if lang.startswith("zh") else "Version Too Low"
+        _lead = ("推荐您立即升级该技能。新版本功能更加全面、使用额度更多，<br>"
+                 "升级后即可恢复全部能力，并继续享受每日免费额度与会员权益。")
+        _btn_text = "前往升级最新版本" if lang.startswith("zh") else "Upgrade to Latest"
+        _icon = "⚠️"
+
+    # 多平台下载链接 HTML
+    _platform_links = "".join(
+        f'<a class="plat-link" href="{url}" target="_blank" rel="noopener">{name}</a>'
+        for name, url in _DOWNLOAD_URLS.items()
+    )
+
+    return f"""<!DOCTYPE html>
+<html lang="{lang}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{_title} · MC Ecosystem Skill</title>
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+body {{ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;
+        background:{_bg}; min-height:100vh;
+        display:flex; align-items:center; justify-content:center; padding:24px; }}
+.card {{ background:#fff; border-radius:18px; box-shadow:{_card_shadow};
+        max-width:560px; width:100%; padding:40px 36px; text-align:center; }}
+.icon {{ width:84px; height:84px; margin:0 auto 18px; border-radius:50%;
+        background:{_icon_bg}; display:flex; align-items:center; justify-content:center;
+        font-size:42px; color:{_icon_color}; }}
+h1 {{ font-size:24px; color:#111827; margin-bottom:10px; font-weight:700; }}
+.lead {{ font-size:15px; color:#6b7280; line-height:1.7; margin-bottom:22px; }}
+.versions {{ display:flex; gap:14px; justify-content:center; margin:22px 0; flex-wrap:wrap; }}
+.ver {{ padding:12px 18px; border-radius:12px; font-size:14px; font-weight:600; }}
+.ver-old {{ background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; }}
+.ver-new {{ background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; }}
+.warn {{ background:#fff7ed; border-left:4px solid #f59e0b; padding:14px 16px;
+        border-radius:8px; text-align:left; font-size:13px; color:#92400e;
+        margin:18px 0; line-height:1.6; }}
+.action {{ display:inline-block; margin-top:18px; padding:14px 32px; border-radius:10px;
+          background:linear-gradient(135deg,#3b82f6,#2563eb); color:#fff;
+          text-decoration:none; font-weight:700; font-size:15px;
+          box-shadow:0 6px 18px rgba(37,99,235,0.32); }}
+.action:hover {{ transform:translateY(-2px); transition:transform .15s; }}
+.platforms {{ margin-top:14px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }}
+.plat-link {{ display:inline-block; padding:8px 16px; border-radius:8px;
+              background:#f3f4f6; color:#374151; text-decoration:none;
+              font-size:13px; font-weight:600; border:1px solid #e5e7eb; }}
+.plat-link:hover {{ background:#e5e7eb; }}
+.tips {{ margin-top:20px; font-size:12px; color:#9ca3af; line-height:1.6; }}
+.tips strong {{ color:#6b7280; }}
+.footer {{ margin-top:24px; padding-top:18px; border-top:1px solid #f3f4f6;
+          font-size:11px; color:#9ca3af; }}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">{_icon}</div>
+    <h1>{_title}</h1>
+    <p class="lead">{_lead}</p>
+
+    <div class="versions">
+      <span class="ver ver-old">{'当前' if lang.startswith('zh') else 'Current'} v{_u}</span>
+      <span class="ver ver-new">{'最新' if lang.startswith('zh') else 'Latest'} v{_l}</span>
+    </div>
+
+    <div class="warn">
+      {_r}
+      {f'<br>⏳ {'宽限期剩余' if lang.startswith('zh') else 'Grace period remaining'} <strong>{_grace}</strong> {'天，到期后将完全停止服务。' if lang.startswith('zh') else 'days, service will stop after that.'}' if _grace > 0 else ''}
+    </div>
+
+    <a class="action" href="{_DOWNLOAD_URLS['GitHub']}" target="_blank" rel="noopener">{_btn_text}</a>
+
+    <div class="platforms">
+      {_platform_links}
+    </div>
+
+    <div class="tips">
+      <strong>{'升级步骤：' if lang.startswith('zh') else 'Upgrade Steps:'}</strong><br>
+      {'1. 访问上方任一平台下载最新版本 V' if lang.startswith('zh') else '1. Download latest V'}{_l}<br>
+      {'2. 替换本地 Skill 文件夹，重启 Trae / Claude Code / Cursor' if lang.startswith('zh') else '2. Replace local Skill folder, restart your IDE'}<br>
+      {'3. 重新执行 Skill，版本号会自动同步到管理后台' if lang.startswith('zh') else '3. Re-run Skill, version syncs to admin automatically'}
+    </div>
+
+    <div class="footer">
+      MC Ecosystem Adapt Engineer Skill · {'升级提示页' if lang.startswith('zh') else 'Upgrade Notice'} · {_now}
+    </div>
+  </div>
+</body>
+</html>"""
+
+
 if __name__ == "__main__":
-    show_payment_page(reason="免费额度已用完，今日剩余 8 次免费额度", mode="auto")
+    show_payment_page(reason="今日免费额度已用完，明日重置", mode="auto")

@@ -65,7 +65,7 @@ def _get_machine_id_for_banner() -> str:
         mid = state.get("machine_id", "")
         return mid[:16] + "..." if len(mid) > 16 else mid
     except Exception:
-        return "（请使用 F10 功能查看完整机器码）"
+        return ""  # 获取失败时降级为空，由上层渲染逻辑决定是否显示
 
 
 def render_console_banner(update_info: Dict[str, Any]) -> str:
