@@ -31,7 +31,6 @@ _PAYMENT_ASSETS = _PROJECT_ROOT / "assets" / "payment"
 
 # === 打赏渠道二维码（第三级支持与打赏页面使用）===
 _TIPS_QR_FILES = {
-    "wechat_mp": _PAYMENT_ASSETS / "wechat_qr.png",
     "afdian": _PAYMENT_ASSETS / "afdian_qr.png",
     "website": _PAYMENT_ASSETS / "website_qr.png",
 }
@@ -881,11 +880,6 @@ def _build_full_page_html(reason: str = "", machine_id: str = "") -> str:
     </div>
 
     <div class="support-section">
-      <div class="support-card support-card-wechat" onclick="showTipQr('wechat_mp')">
-        <div class="support-label" data-i18n-zh="📱 关注微信公众号" data-i18n-en="📱 Follow WeChat Official Account">📱 关注微信公众号</div>
-        <span class="support-link" data-i18n-zh="点击查看二维码" data-i18n-en="Click to view QR code">点击查看二维码</span>
-      </div>
-
       <div class="support-card support-card-afdian" onclick="showTipQr('afdian')">
         <div class="support-label" data-i18n-zh="☕ 爱发电支持" data-i18n-en="☕ Support on Afdian">☕ 爱发电支持</div>
         <span class="support-link" data-i18n-zh="点击查看二维码" data-i18n-en="Click to view QR code">点击查看二维码</span>

@@ -41,7 +41,7 @@ EXPECTED_FILE_HASHES = {
     "core/auth_client.py": "725cee0ae48d9576",
     "core/integrity_guard.py": None,     # 自校验跳过（写入指纹会改变自身文件）
     # 支付 / 授权 / 版本相关
-    "core/payment_page.py": "05e11c39f69ac62d",
+    "core/payment_page.py": "e0dfc50c99bb5a46",
     "core/payment_i18n.py": "021b4e23d1c2173e",
     "core/version_checker.py": "aeaac96220ccaca5",
     # 技能入口
